@@ -34,7 +34,7 @@ const HomePage = () => {
 
                     <div className="action-buttons">
                         {/* Botón con ícono de carpeta */}
-                        <Link to="/formulario" className="btn-primary-glow">
+                        <Link to="/area" className="btn-primary-glow">
                             <span className="btn-icon">📂</span> INGRESA A TU ÁREA
                         </Link>
                         
