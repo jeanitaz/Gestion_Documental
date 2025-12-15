@@ -4,7 +4,7 @@
     --primary-blue: #020617;
     --light-blue: #0ea5e9;
     --cyan-water: #22d3ee;
-    --glass-bg: rgba(15, 23, 42, 0.85); /* Un poco más oscuro para leer mejor */
+    --glass-bg: rgba(15, 23, 42, 0.85);
     --glass-border: rgba(34, 211, 238, 0.2);
     --text-white: #f8fafc;
 }
@@ -20,10 +20,10 @@
     font-family: 'Montserrat', sans-serif;
     color: var(--text-white);
     background-color: var(--primary-blue);
-    overflow: hidden; /* Evita scroll en el body principal */
+    overflow: hidden;
 }
 
-/* Reutilizamos las animaciones de fondo del Home para continuidad */
+/* Animación de fondo */
 .weather-bg-animation {
     position: absolute;
     top: -50%; left: -50%; width: 200%; height: 200%;
@@ -43,17 +43,22 @@
     
     width: 90%;
     max-width: 1200px;
-    height: 85vh; /* Altura fija para hacer scroll interno */
+    height: 85vh; 
     
     display: flex;
     flex-direction: column;
     padding: 2rem;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
     
-    /* Animación de entrada */
     opacity: 0;
     transform: scale(0.95);
     animation: fadeUpScale 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+
+    /* --- BLOQUEO DE SELECCIÓN DE TEXTO (Estilo App) --- */
+    -webkit-user-select: none; /* Chrome / Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* IE / Edge */
+    user-select: none;         /* Estándar */
 }
 
 @keyframes fadeUpScale {
@@ -84,32 +89,21 @@
     font-size: 1rem;
 }
 
-/* --- GRID DE BOTONES (ÁREAS) --- */
+/* --- GRID DE BOTONES --- */
 .area-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
-    overflow-y: auto; /* SCROLL INTERNO */
+    overflow-y: auto;
     padding: 1rem;
     padding-bottom: 2rem;
-    
-    /* Scrollbar personalizado estilo Tech */
     scrollbar-width: thin;
     scrollbar-color: var(--light-blue) rgba(0,0,0,0.3);
 }
 
-/* Scrollbar para Chrome/Safari */
-.area-grid::-webkit-scrollbar {
-    width: 6px;
-}
-.area-grid::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.3);
-    border-radius: 10px;
-}
-.area-grid::-webkit-scrollbar-thumb {
-    background: var(--light-blue);
-    border-radius: 10px;
-}
+.area-grid::-webkit-scrollbar { width: 6px; }
+.area-grid::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 10px; }
+.area-grid::-webkit-scrollbar-thumb { background: var(--light-blue); border-radius: 10px; }
 
 /* --- TARJETA INDIVIDUAL DE ÁREA --- */
 .area-card {
@@ -124,17 +118,18 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
-    height: 100px; /* Altura fija para uniformidad */
+    height: 100px;
+    
+    /* --- INTERACTIVIDAD --- */
+    cursor: pointer; /* Fuerza el cursor de 'manito' */
 }
 
-/* Ícono */
 .card-icon {
     font-size: 2.5rem;
     filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.3));
     transition: transform 0.3s ease;
 }
 
-/* Texto */
 .card-text {
     color: var(--text-white);
     font-size: 0.95rem;
@@ -151,33 +146,22 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 211, 238, 0.2);
 }
 
-.area-card:hover .card-icon {
-    transform: scale(1.2) rotate(-5deg);
-}
+.area-card:hover .card-icon { transform: scale(1.2) rotate(-5deg); }
+.area-card:hover .card-text { color: var(--cyan-water); font-weight: 700; }
 
-.area-card:hover .card-text {
-    color: var(--cyan-water);
-    font-weight: 700;
-}
-
-/* Brillo al pasar el mouse (efecto shine) */
+/* Shine */
 .card-shine {
-    position: absolute;
-    top: 0; left: -100%;
+    position: absolute; top: 0; left: -100%;
     width: 50%; height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
     transform: skewX(-25deg);
     transition: 0.5s;
 }
+.area-card:hover .card-shine { left: 150%; transition: 0.7s; }
 
-.area-card:hover .card-shine {
-    left: 150%;
-    transition: 0.7s;
-}
-
-/* --- FOOTER / BOTÓN REGRESAR --- */
+/* --- FOOTER --- */
 .area-footer {
-    margin-top: auto; /* Empuja al fondo */
+    margin-top: auto;
     padding-top: 1.5rem;
     display: flex;
     justify-content: center;
@@ -192,26 +176,113 @@
     padding: 10px 20px;
     border-radius: 50px;
 }
+.btn-back:hover { color: var(--cyan-water); background: rgba(255,255,255,0.05); }
 
-.btn-back:hover {
-    color: var(--cyan-water);
-    background: rgba(255,255,255,0.05);
+/* --- ESTILOS DEL MODAL --- */
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(2, 6, 23, 0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
 }
+
+.modal-glass {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid var(--cyan-water);
+    box-shadow: 0 0 50px rgba(34, 211, 238, 0.25);
+    border-radius: 20px;
+    padding: 2.5rem;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    text-align: center;
+    transform: scale(0.8);
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popIn { to { transform: scale(1); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.btn-close-modal {
+    position: absolute; top: 15px; right: 15px;
+    background: transparent; border: none; color: #94a3b8;
+    font-size: 1.5rem; cursor: pointer; transition: 0.3s;
+}
+.btn-close-modal:hover { color: var(--cyan-water); transform: rotate(90deg); }
+
+.modal-icon-wrapper { font-size: 4rem; margin-bottom: 10px; filter: drop-shadow(0 0 15px rgba(34, 211, 238, 0.4)); }
+.modal-area-name {
+    color: var(--text-white); font-size: 1.2rem; margin-bottom: 5px; font-weight: 700;
+    background: linear-gradient(to right, #fff, var(--cyan-water)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.modal-instruction { color: #64748b; font-size: 0.85rem; margin-bottom: 2rem; }
+
+/* Formulario */
+.login-form { display: flex; flex-direction: column; gap: 1.5rem; }
+.input-group { text-align: left; }
+.input-group label {
+    display: block; color: var(--light-blue); font-size: 0.8rem; margin-bottom: 5px; font-weight: 500; letter-spacing: 0.5px;
+}
+
+.input-group input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 15px;
+    border-radius: 8px;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    outline: none;
+    transition: 0.3s;
+    
+    /* --- IMPORTANTE: PERMITE SELECCIONAR TEXTO SOLO AQUÍ --- */
+    user-select: text; 
+    -webkit-user-select: text;
+}
+
+.input-group input:focus {
+    border-color: var(--cyan-water); box-shadow: 0 0 15px rgba(34, 211, 238, 0.1); background: rgba(255, 255, 255, 0.1);
+}
+
+/* Botón Ingresar */
+.btn-login-glow {
+    margin-top: 10px;
+    background: linear-gradient(90deg, #0ea5e9, #22d3ee);
+    color: #0f172a; border: none; padding: 14px; border-radius: 50px;
+    font-weight: 800; letter-spacing: 1px; cursor: pointer;
+    transition: all 0.3s ease; box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+}
+.btn-login-glow:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(34, 211, 238, 0.6); }
+
+/* Estados de Error y Carga */
+.error-message {
+    color: #ef4444; font-size: 0.85rem; background: rgba(239, 68, 68, 0.1);
+    padding: 10px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3); text-align: center; margin-bottom: 10px;
+}
+.btn-login-glow:disabled { opacity: 0.7; cursor: not-allowed; background: #475569; box-shadow: none; }
+
+.blur-background { filter: blur(5px); pointer-events: none; }
 
 /* --- RESPONSIVE --- */
 @media screen and (max-width: 768px) {
+    .area-glass-container { width: 95%; padding: 1.5rem 1rem; }
+    .area-title { font-size: 1.8rem; }
+    .area-grid { grid-template-columns: 1fr; }
+    .area-card { height: auto; padding: 1rem; }
+}
+
+@media screen and (max-width: 480px) {
     .area-glass-container {
-        width: 95%;
-        padding: 1.5rem 1rem;
+        width: 100%; height: 100dvh; border-radius: 0; border: none; background: rgba(15, 23, 42, 0.95);
     }
-    .area-title {
-        font-size: 1.8rem;
-    }
-    .area-grid {
-        grid-template-columns: 1fr; /* Una sola columna en móvil */
-    }
-    .area-card {
-        height: auto; /* Altura flexible en móvil */
-        padding: 1rem;
-    }
+    .modal-glass { width: 95%; padding: 2rem 1.5rem; }
+    .modal-icon-wrapper { font-size: 3rem; }
+    .modal-area-name { font-size: 1.1rem; }
 }
