@@ -1,14 +1,23 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import '../styles/AreaDashboard.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
-// 1. Definimos la interfaz del dato
+// 1. Definimos la interfaz del Área
 interface AreaInfo {
     id: string;
     label: string;
 }
 
-// 2. Lista de datos (Diccionario)
+// 2. Definimos la interfaz del Documento (para evitar errores con lista vacía)
+interface DocumentFile {
+    id: number;
+    name: string;
+    date: string;
+    size: string;
+    type: string;
+}
+
+// 3. Lista de áreas
 const AREA_DATA: AreaInfo[] = [
     { id: 'tic', label: 'Tecnologías de la Información' },
     { id: 'rrhh', label: 'Recursos Humanos' },
@@ -28,19 +37,59 @@ const AreaDashboard = () => {
     const { id } = useParams<{ id: string }>(); 
     const navigate = useNavigate();
     
-    // --- CORRECCIÓN: CALCULAMOS EL NOMBRE DIRECTAMENTE ---
-    // No usamos useState ni useEffect para esto. Es más rápido y evita el error.
+    // Refs
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Estados
+    const [searchTerm, setSearchTerm] = useState('');
+    
+    // --- CAMBIO: INICIAMOS LA LISTA VACÍA ---
+    const [documents, setDocuments] = useState<DocumentFile[]>([]); 
+    
+    // Calculamos el nombre del área
     const foundArea = AREA_DATA.find(area => area.id === id);
     const areaName = foundArea ? foundArea.label : 'Gestión Documental';
 
-    // Datos quemados para la tabla
-    const [documents] = useState([
-        { id: 1, name: 'Informe_Mensual_Agosto.pdf', date: '2023-08-15', size: '2.4 MB', type: 'PDF' },
-        { id: 2, name: 'Nomina_Personal.xlsx', date: '2023-08-10', size: '1.1 MB', type: 'EXCEL' },
-        { id: 3, name: 'Requerimiento_Equipos.docx', date: '2023-08-05', size: '500 KB', type: 'WORD' },
-    ]);
+    // --- LÓGICA DE FILTRADO ---
+    const filteredDocuments = documents.filter((doc) => 
+        doc.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-    // Solo usamos useEffect para verificar la seguridad (sesión)
+    // --- FUNCIÓN 1: SUBIR ARCHIVO ---
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const newDoc: DocumentFile = {
+                id: Date.now(),
+                name: file.name,
+                date: new Date().toISOString().split('T')[0],
+                size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
+                type: file.name.split('.').pop()?.toUpperCase() || 'FILE'
+            };
+            setDocuments([...documents, newDoc]);
+        }
+    };
+
+    // --- FUNCIÓN 2: ELIMINAR ARCHIVO (AHORA SÍ FUNCIONA) ---
+    const handleDelete = (docId: number) => {
+        // Preguntamos antes de borrar
+        const confirmDelete = window.confirm("¿Estás seguro de eliminar este archivo?");
+        if (confirmDelete) {
+            const updatedList = documents.filter(doc => doc.id !== docId);
+            setDocuments(updatedList);
+        }
+    };
+
+    // --- FUNCIÓN 3: DESCARGAR ARCHIVO ---
+    const handleDownload = (fileName: string) => {
+        alert(`Descargando archivo: ${fileName}`);
+    };
+
+    // Verificar sesión
     useEffect(() => {
         const session = localStorage.getItem('userSession');
         if (!session) {
@@ -66,6 +115,7 @@ const AreaDashboard = () => {
                 <nav className="sidebar-nav">
                     <button className="nav-item active">📂 Documentos</button>
                     <button className="nav-item">📤 Cargar Archivo</button>
+                    <button className="nav-item">⚙️ Configuración</button>
                 </nav>
 
                 <button onClick={handleLogout} className="btn-logout">
@@ -78,7 +128,6 @@ const AreaDashboard = () => {
                     <h1 className="dashboard-title">{areaName}</h1>
                     <div className="user-profile">
                         <span className="user-avatar">👤</span>
-                        {/* Usamos (id || 'user') para evitar undefined */}
                         <span className="user-name">Admin {(id || 'User').toUpperCase()}</span>
                     </div>
                 </header>
@@ -86,9 +135,35 @@ const AreaDashboard = () => {
                 <div className="content-glass">
                     <div className="toolbar">
                         <h3>Archivos del Área</h3>
-                        <button className="btn-upload-new">
-                            + Subir Nuevo
-                        </button>
+                        
+                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                            <input 
+                                type="text" 
+                                placeholder="Buscar archivo..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                                    borderRadius: '8px',
+                                    padding: '10px 15px',
+                                    color: 'white',
+                                    outline: 'none',
+                                    fontFamily: 'Montserrat, sans-serif'
+                                }}
+                            />
+
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                style={{ display: 'none' }} 
+                                onChange={handleFileChange}
+                            />
+
+                            <button className="btn-upload-new" onClick={handleUploadClick}>
+                                + Subir Nuevo
+                            </button>
+                        </div>
                     </div>
 
                     <div className="table-responsive">
@@ -103,20 +178,44 @@ const AreaDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {documents.map((doc) => (
-                                    <tr key={doc.id}>
-                                        <td className="col-name">
-                                            <span className="file-icon">📄</span> {doc.name}
-                                        </td>
-                                        <td>{doc.date}</td>
-                                        <td><span className={`badge ${doc.type}`}>{doc.type}</span></td>
-                                        <td>{doc.size}</td>
-                                        <td>
-                                            <button className="btn-action download">⬇</button>
-                                            <button className="btn-action delete">🗑</button>
+                                {/* Si está vacío, mostramos mensaje opcional, sino la lista */}
+                                {filteredDocuments.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>
+                                            No hay documentos cargados. Sube uno nuevo.
                                         </td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    filteredDocuments.map((doc) => (
+                                        <tr key={doc.id}>
+                                            <td className="col-name">
+                                                <span className="file-icon">📄</span> {doc.name}
+                                            </td>
+                                            <td>{doc.date}</td>
+                                            <td><span className={`badge ${doc.type}`}>{doc.type}</span></td>
+                                            <td>{doc.size}</td>
+                                            <td>
+                                                {/* Botón Descargar CON FUNCIÓN */}
+                                                <button 
+                                                    className="btn-action download" 
+                                                    onClick={() => handleDownload(doc.name)}
+                                                    title="Descargar"
+                                                >
+                                                    ⬇
+                                                </button>
+
+                                                {/* Botón Borrar CON FUNCIÓN */}
+                                                <button 
+                                                    className="btn-action delete" 
+                                                    onClick={() => handleDelete(doc.id)}
+                                                    title="Eliminar"
+                                                >
+                                                    🗑
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
