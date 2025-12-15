@@ -7,7 +7,7 @@
     --light-blue: #0ea5e9;
     --cyan-water: #22d3ee;
     
-    --glass-bg: rgba(15, 23, 42, 0.65); 
+    --glass-bg: rgba(15, 23, 42, 0.70); 
     --glass-border: rgba(34, 211, 238, 0.2);
     --text-white: #f8fafc;
 }
@@ -15,16 +15,18 @@
 /* --- CONTENEDOR PRINCIPAL --- */
 .inamhi-home-container {
     position: relative;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    min-height: 100vh; /* Permite crecer si la pantalla es muy bajita */
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    overflow: hidden;
+    overflow-x: hidden; /* Evita scroll horizontal */
     font-family: 'Montserrat', sans-serif;
     color: var(--text-white);
     background-color: var(--primary-blue);
+    padding: 1rem; /* Margen de seguridad para móviles */
+    box-sizing: border-box;
 }
 
 /* Animación de fondo */
@@ -68,26 +70,34 @@
     100% { transform: translateY(-120vh) scale(1.5); }
 }
 
-/* --- TARJETA DE CRISTAL (CENTRADA TOTALMENTE) --- */
+/* --- TARJETA DE CRISTAL (RESPONSIVA) --- */
 .glass-card {
     background: var(--glass-bg);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border: 1px solid var(--glass-border);
     border-radius: 30px;
-    padding: 3rem 2rem;
     
-    /* CAMBIOS PARA CENTRAR TODO */
-    max-width: 600px;       /* Más estrecho para que parezca una tarjeta vertical */
+    /* RESPONSIVIDAD: Padding dinámico (crece con la pantalla) */
+    padding: clamp(2rem, 5vh, 3.5rem) clamp(1.5rem, 5vw, 3rem);
+    
+    /* Ancho controlado: nunca muy pequeño, nunca gigante */
     width: 90%;
+    max-width: 550px;
+    
     display: flex;
-    flex-direction: column; /* Apilar elementos verticalmente */
-    align-items: center;    /* Centrar horizontalmente */
-    text-align: center;     /* Texto centrado */
-    gap: 2rem;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    
+    /* Espacio entre elementos dinámico */
+    gap: clamp(1rem, 3vh, 2rem);
     
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    
+    /* Asegura que no choque con el footer en pantallas chicas */
+    margin-bottom: 30px; 
 }
 
 .glass-card:hover {
@@ -100,12 +110,12 @@
     width: 100%;
     display: flex;
     justify-content: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0;
 }
 
 .logo-glow {
     background: rgba(255, 255, 255, 0.9);
-    padding: 20px;
+    padding: clamp(15px, 2vw, 25px); /* Padding dinámico */
     border-radius: 25px;
     box-shadow: 0 0 50px rgba(34, 211, 238, 0.4); 
     display: flex;
@@ -115,7 +125,8 @@
 
 .main-logo {
     width: 100%;
-    max-width: 250px; /* Un poco más pequeño para balancear */
+    /* El logo se adapta entre 180px y 260px según la pantalla */
+    width: clamp(180px, 40vw, 260px);
     height: auto;
 }
 
@@ -124,12 +135,13 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center; /* Asegura que los hijos se centren */
+    align-items: center;
 }
 
 .main-title {
     font-family: 'Roboto', sans-serif;
-    font-size: 1.3rem;
+    /* Fuente dinámica: crece entre 1rem y 1.4rem */
+    font-size: clamp(1rem, 3vw, 1.4rem);
     font-weight: 400;
     margin: 0;
     letter-spacing: 3px;
@@ -140,9 +152,10 @@
 
 .sub-title {
     font-family: 'Montserrat', sans-serif;
-    font-size: 3rem;
+    /* Título INAMHI dinámico: crece entre 2.5rem y 3.5rem */
+    font-size: clamp(2.5rem, 8vw, 3.5rem);
     font-weight: 800;
-    margin: 0.5rem 0 1.5rem 0;
+    margin: 0.5rem 0 1rem 0;
     background: linear-gradient(to right, #ffffff, var(--light-blue));
     -webkit-background-clip: text;
     background-clip: text;
@@ -152,39 +165,41 @@
 }
 
 .description {
-    font-size: 1.1rem;
+    /* Texto descripción dinámico */
+    font-size: clamp(0.95rem, 2vw, 1.15rem);
     line-height: 1.6;
-    margin-bottom: 2.5rem;
+    margin-bottom: clamp(1.5rem, 4vh, 2.5rem);
     color: #cbd5e1;
     max-width: 500px;
-    /* Centrar el bloque de texto explícitamente */
     margin-left: auto;
     margin-right: auto;
 }
 
-/* --- BOTONES (CENTRADOS) --- */
+/* --- BOTONES --- */
 .action-buttons {
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
-    align-items: center; /* CLAVE: Centrar botones */
+    align-items: center;
     width: 100%;
 }
 
 .btn-primary-glow {
     background: linear-gradient(90deg, #0ea5e9, #22d3ee); 
     color: #0f172a; 
-    padding: 18px 50px; /* Botón un poco más ancho */
+    /* Padding botón dinámico */
+    padding: clamp(15px, 2vh, 18px) clamp(30px, 5vw, 50px);
     border-radius: 50px;
     text-decoration: none;
     font-weight: 800;
-    font-size: 1.1rem;
+    font-size: clamp(1rem, 2vw, 1.1rem);
     letter-spacing: 0.5px;
     transition: all 0.3s ease;
     box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
     display: flex;
     align-items: center;
     gap: 12px;
+    white-space: nowrap; /* Evita que el texto se parta */
 }
 
 .btn-primary-glow:hover {
@@ -203,6 +218,7 @@
     border: 1px solid rgba(34, 211, 238, 0.3);
     border-radius: 50px;
     background: rgba(0,0,0,0.2);
+    white-space: nowrap;
 }
 
 .btn-secondary-ghost:hover {
@@ -214,11 +230,14 @@
 
 /* Footer */
 .simple-footer {
-    position: absolute;
-    bottom: 25px;
+    /* Posición segura para responsive */
+    position: relative;
+    margin-top: auto;
     font-size: 0.85rem;
     opacity: 0.5;
     letter-spacing: 1px;
+    text-align: center;
+    padding-bottom: 10px;
 }
 
 /* Animación de entrada */
@@ -230,4 +249,22 @@
 
 @keyframes fadeUp {
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- MEDIA QUERIES PARA PANTALLAS PEQUEÑAS --- */
+/* (Ajustes extra para laptops pequeñas o móviles) */
+
+@media screen and (max-height: 700px) {
+    /* Si la pantalla es bajita (laptops pequeñas) */
+    .glass-card {
+        padding: 2rem 1.5rem;
+        gap: 1rem;
+    }
+    .sub-title {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .description {
+        margin-bottom: 1.5rem;
+    }
 }
