@@ -8,13 +8,15 @@ interface AreaInfo {
     label: string;
 }
 
-// 2. Definimos la interfaz del Documento (para evitar errores con lista vacía)
+// 2. Definimos la interfaz del Documento
+// Agregamos 'fileData' para guardar el archivo real en la memoria del navegador
 interface DocumentFile {
     id: number;
     name: string;
     date: string;
     size: string;
     type: string;
+    fileData?: File; // Aquí se guardará el archivo real
 }
 
 // 3. Lista de áreas
@@ -43,7 +45,7 @@ const AreaDashboard = () => {
     // Estados
     const [searchTerm, setSearchTerm] = useState('');
     
-    // --- CAMBIO: INICIAMOS LA LISTA VACÍA ---
+    // Lista vacía inicial
     const [documents, setDocuments] = useState<DocumentFile[]>([]); 
     
     // Calculamos el nombre del área
@@ -55,7 +57,7 @@ const AreaDashboard = () => {
         doc.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // --- FUNCIÓN 1: SUBIR ARCHIVO ---
+    // --- FUNCIÓN 1: SUBIR ARCHIVO (GUARDANDO EL ARCHIVO REAL) ---
     const handleUploadClick = () => {
         fileInputRef.current?.click();
     };
@@ -68,15 +70,17 @@ const AreaDashboard = () => {
                 name: file.name,
                 date: new Date().toISOString().split('T')[0],
                 size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
-                type: file.name.split('.').pop()?.toUpperCase() || 'FILE'
+                type: file.name.split('.').pop()?.toUpperCase() || 'FILE',
+                fileData: file // ¡IMPORTANTE! Guardamos el archivo aquí
             };
             setDocuments([...documents, newDoc]);
         }
+        // Limpiamos el input para poder subir el mismo archivo si se borra
+        if (event.target) event.target.value = '';
     };
 
-    // --- FUNCIÓN 2: ELIMINAR ARCHIVO (AHORA SÍ FUNCIONA) ---
+    // --- FUNCIÓN 2: ELIMINAR ARCHIVO ---
     const handleDelete = (docId: number) => {
-        // Preguntamos antes de borrar
         const confirmDelete = window.confirm("¿Estás seguro de eliminar este archivo?");
         if (confirmDelete) {
             const updatedList = documents.filter(doc => doc.id !== docId);
@@ -84,9 +88,27 @@ const AreaDashboard = () => {
         }
     };
 
-    // --- FUNCIÓN 3: DESCARGAR ARCHIVO ---
-    const handleDownload = (fileName: string) => {
-        alert(`Descargando archivo: ${fileName}`);
+    // --- FUNCIÓN 3: DESCARGAR ARCHIVO (AHORA SÍ FUNCIONA) ---
+    const handleDownload = (doc: DocumentFile) => {
+        if (doc.fileData) {
+            // 1. Creamos una URL temporal para el archivo que está en memoria
+            const url = URL.createObjectURL(doc.fileData);
+            
+            // 2. Creamos un enlace invisible
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = doc.name; // Forzamos el nombre de descarga
+            document.body.appendChild(link);
+            
+            // 3. Simulamos el clic para que empiece a bajar
+            link.click();
+            
+            // 4. Limpiamos la memoria
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } else {
+            alert("Error: No se encontró el archivo origen en la memoria.");
+        }
     };
 
     // Verificar sesión
@@ -115,7 +137,6 @@ const AreaDashboard = () => {
                 <nav className="sidebar-nav">
                     <button className="nav-item active">📂 Documentos</button>
                     <button className="nav-item">📤 Cargar Archivo</button>
-                    <button className="nav-item">⚙️ Configuración</button>
                 </nav>
 
                 <button onClick={handleLogout} className="btn-logout">
@@ -178,7 +199,6 @@ const AreaDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {/* Si está vacío, mostramos mensaje opcional, sino la lista */}
                                 {filteredDocuments.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>
@@ -195,16 +215,16 @@ const AreaDashboard = () => {
                                             <td><span className={`badge ${doc.type}`}>{doc.type}</span></td>
                                             <td>{doc.size}</td>
                                             <td>
-                                                {/* Botón Descargar CON FUNCIÓN */}
+                                                {/* BOTÓN DESCARGAR */}
                                                 <button 
                                                     className="btn-action download" 
-                                                    onClick={() => handleDownload(doc.name)}
+                                                    onClick={() => handleDownload(doc)} // Pasamos el objeto doc completo
                                                     title="Descargar"
                                                 >
                                                     ⬇
                                                 </button>
 
-                                                {/* Botón Borrar CON FUNCIÓN */}
+                                                {/* BOTÓN BORRAR */}
                                                 <button 
                                                     className="btn-action delete" 
                                                     onClick={() => handleDelete(doc.id)}
