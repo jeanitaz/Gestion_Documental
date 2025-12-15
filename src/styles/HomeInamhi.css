@@ -7,7 +7,7 @@
     --light-blue: #0ea5e9;
     --cyan-water: #22d3ee;
     
-    --glass-bg: rgba(15, 23, 42, 0.70); 
+    --glass-bg: rgba(15, 23, 42, 0.75); 
     --glass-border: rgba(34, 211, 238, 0.2);
     --text-white: #f8fafc;
 }
@@ -16,17 +16,15 @@
 .inamhi-home-container {
     position: relative;
     width: 100%;
-    min-height: 100vh; /* Permite crecer si la pantalla es muy bajita */
+    height: 100vh; /* Ocupa toda la pantalla */
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    overflow-x: hidden; /* Evita scroll horizontal */
+    overflow: hidden;
     font-family: 'Montserrat', sans-serif;
     color: var(--text-white);
     background-color: var(--primary-blue);
-    padding: 1rem; /* Margen de seguridad para móviles */
-    box-sizing: border-box;
 }
 
 /* Animación de fondo */
@@ -70,7 +68,7 @@
     100% { transform: translateY(-120vh) scale(1.5); }
 }
 
-/* --- TARJETA DE CRISTAL (RESPONSIVA) --- */
+/* --- TARJETA DE CRISTAL (DISEÑO FIJO ORIGINAL) --- */
 .glass-card {
     background: var(--glass-bg);
     backdrop-filter: blur(15px);
@@ -78,26 +76,22 @@
     border: 1px solid var(--glass-border);
     border-radius: 30px;
     
-    /* RESPONSIVIDAD: Padding dinámico (crece con la pantalla) */
-    padding: clamp(2rem, 5vh, 3.5rem) clamp(1.5rem, 5vw, 3rem);
-    
-    /* Ancho controlado: nunca muy pequeño, nunca gigante */
+    /* VOLVEMOS A LOS TAMAÑOS QUE SE VEÍAN BIEN */
+    padding: 3rem 2.5rem;
     width: 90%;
-    max-width: 550px;
+    max-width: 550px; /* Ancho ideal para verse centrado y elegante */
     
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    
-    /* Espacio entre elementos dinámico */
-    gap: clamp(1rem, 3vh, 2rem);
+    gap: 1.5rem;
     
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     
-    /* Asegura que no choque con el footer en pantallas chicas */
-    margin-bottom: 30px; 
+    /* ESTO ASEGURA QUE NO CHOQUE CON EL BORDE EN PANTALLAS PEQUEÑAS */
+    margin: auto; 
 }
 
 .glass-card:hover {
@@ -110,12 +104,11 @@
     width: 100%;
     display: flex;
     justify-content: center;
-    margin-bottom: 0;
 }
 
 .logo-glow {
     background: rgba(255, 255, 255, 0.9);
-    padding: clamp(15px, 2vw, 25px); /* Padding dinámico */
+    padding: 20px;
     border-radius: 25px;
     box-shadow: 0 0 50px rgba(34, 211, 238, 0.4); 
     display: flex;
@@ -125,8 +118,7 @@
 
 .main-logo {
     width: 100%;
-    /* El logo se adapta entre 180px y 260px según la pantalla */
-    width: clamp(180px, 40vw, 260px);
+    max-width: 240px; /* Tamaño original */
     height: auto;
 }
 
@@ -140,20 +132,19 @@
 
 .main-title {
     font-family: 'Roboto', sans-serif;
-    /* Fuente dinámica: crece entre 1rem y 1.4rem */
-    font-size: clamp(1rem, 3vw, 1.4rem);
+    font-size: 1.2rem;
     font-weight: 400;
     margin: 0;
     letter-spacing: 3px;
     text-transform: uppercase;
     color: var(--cyan-water);
     opacity: 0.9;
+    margin-top: 10px;
 }
 
 .sub-title {
     font-family: 'Montserrat', sans-serif;
-    /* Título INAMHI dinámico: crece entre 2.5rem y 3.5rem */
-    font-size: clamp(2.5rem, 8vw, 3.5rem);
+    font-size: 3.5rem; /* Título grande original */
     font-weight: 800;
     margin: 0.5rem 0 1rem 0;
     background: linear-gradient(to right, #ffffff, var(--light-blue));
@@ -165,14 +156,11 @@
 }
 
 .description {
-    /* Texto descripción dinámico */
-    font-size: clamp(0.95rem, 2vw, 1.15rem);
+    font-size: 1.1rem;
     line-height: 1.6;
-    margin-bottom: clamp(1.5rem, 4vh, 2.5rem);
+    margin-bottom: 2rem;
     color: #cbd5e1;
-    max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
+    max-width: 480px; /* Ancho de texto para que no se estire demasiado */
 }
 
 /* --- BOTONES --- */
@@ -187,19 +175,17 @@
 .btn-primary-glow {
     background: linear-gradient(90deg, #0ea5e9, #22d3ee); 
     color: #0f172a; 
-    /* Padding botón dinámico */
-    padding: clamp(15px, 2vh, 18px) clamp(30px, 5vw, 50px);
+    padding: 16px 45px;
     border-radius: 50px;
     text-decoration: none;
     font-weight: 800;
-    font-size: clamp(1rem, 2vw, 1.1rem);
+    font-size: 1.1rem;
     letter-spacing: 0.5px;
     transition: all 0.3s ease;
     box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
     display: flex;
     align-items: center;
     gap: 12px;
-    white-space: nowrap; /* Evita que el texto se parta */
 }
 
 .btn-primary-glow:hover {
@@ -218,7 +204,6 @@
     border: 1px solid rgba(34, 211, 238, 0.3);
     border-radius: 50px;
     background: rgba(0,0,0,0.2);
-    white-space: nowrap;
 }
 
 .btn-secondary-ghost:hover {
@@ -230,14 +215,13 @@
 
 /* Footer */
 .simple-footer {
-    /* Posición segura para responsive */
-    position: relative;
-    margin-top: auto;
+    position: absolute;
+    bottom: 15px;
     font-size: 0.85rem;
     opacity: 0.5;
     letter-spacing: 1px;
     text-align: center;
-    padding-bottom: 10px;
+    width: 100%;
 }
 
 /* Animación de entrada */
@@ -251,20 +235,43 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- MEDIA QUERIES PARA PANTALLAS PEQUEÑAS --- */
-/* (Ajustes extra para laptops pequeñas o móviles) */
+/* --- AQUÍ ESTÁ EL TRUCO DE LA RESPONSIVIDAD (SIN ROMPER NADA) --- */
 
-@media screen and (max-height: 700px) {
-    /* Si la pantalla es bajita (laptops pequeñas) */
+/* 1. Para Laptops normales y pequeñas (ej. 1366x768 o similar) */
+@media screen and (max-height: 800px) {
     .glass-card {
-        padding: 2rem 1.5rem;
-        gap: 1rem;
+        /* Hacemos ZOOM OUT a la tarjeta para que quepa perfecta */
+        transform: scale(0.85); 
+        /* Compensamos el margen para que siga centrada */
+        margin: auto;
+    }
+}
+
+/* 2. Para Pantallas muy bajitas o tablets apaisadas */
+@media screen and (max-height: 650px) {
+    .glass-card {
+        transform: scale(0.75); /* Un poco más pequeña */
+    }
+    .simple-footer {
+        display: none; /* Ocultamos footer si estorba */
+    }
+}
+
+/* 3. Para Celulares (Vertical) */
+@media screen and (max-width: 500px) {
+    .glass-card {
+        transform: none; /* Quitamos el zoom fijo */
+        padding: 2rem 1.5rem; /* Ajustamos padding manual */
+        width: 95%;
+    }
+    .main-logo {
+        max-width: 180px;
     }
     .sub-title {
         font-size: 2.5rem;
-        margin-bottom: 0.5rem;
     }
-    .description {
-        margin-bottom: 1.5rem;
+    .btn-primary-glow {
+        width: 100%; /* Botón ancho completo */
+        justify-content: center;
     }
 }
