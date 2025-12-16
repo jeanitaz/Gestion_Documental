@@ -2,24 +2,21 @@ import { useParams, useNavigate } from 'react-router-dom';
 import '../styles/AreaDashboard.css';
 import { useEffect, useState, useRef } from 'react';
 
-// 1. Definimos la interfaz del Área
 interface AreaInfo {
     id: string;
     label: string;
 }
 
-// 2. Definimos la interfaz del Documento
-// Agregamos 'fileData' para guardar el archivo real en la memoria del navegador
 interface DocumentFile {
     id: number;
     name: string;
     date: string;
     size: string;
     type: string;
-    fileData?: File; // Aquí se guardará el archivo real
+    relativePath?: string;
+    fileData?: File;
 }
 
-// 3. Lista de áreas
 const AREA_DATA: AreaInfo[] = [
     { id: 'tic', label: 'Tecnologías de la Información' },
     { id: 'rrhh', label: 'Recursos Humanos' },
@@ -36,89 +33,95 @@ const AREA_DATA: AreaInfo[] = [
 ];
 
 const AreaDashboard = () => {
-    const { id } = useParams<{ id: string }>(); 
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    
-    // Refs
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Estados
     const [searchTerm, setSearchTerm] = useState('');
-    
-    // Lista vacía inicial
-    const [documents, setDocuments] = useState<DocumentFile[]>([]); 
-    
-    // Calculamos el nombre del área
+    const [documents, setDocuments] = useState<DocumentFile[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // ESTADO DE NAVEGACIÓN (Ruta actual)
+    const [currentPath, setCurrentPath] = useState('');
+
     const foundArea = AREA_DATA.find(area => area.id === id);
     const areaName = foundArea ? foundArea.label : 'Gestión Documental';
 
-    // --- LÓGICA DE FILTRADO ---
-    const filteredDocuments = documents.filter((doc) => 
+    // --- CONEXIÓN AL BACKEND ---
+    const fetchDocumentsFromNetwork = async () => {
+        if (!id) return;
+        setIsLoading(true);
+        try {
+            // ENVIAMOS EL PATH ACTUAL AL SERVIDOR
+            const response = await fetch(`http://localhost:3001/api/archivos/${id}?subpath=${encodeURIComponent(currentPath)}`);
+
+            if (!response.ok) throw new Error('Error al conectar');
+            const data = await response.json();
+            setDocuments(data);
+        } catch (error) {
+            console.error("Error:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Recargar cuando cambia el ID o la ruta actual (navegación)
+    useEffect(() => {
+        fetchDocumentsFromNetwork();
+    }, [id, currentPath]);
+
+    // --- ENTRAR A CARPETA ---
+    const handleFolderClick = (folderName: string) => {
+        const newPath = currentPath ? `${currentPath}\\${folderName}` : folderName;
+        setCurrentPath(newPath);
+        setSearchTerm('');
+    };
+
+    // --- REGRESAR (SUBIR NIVEL) ---
+    const handleGoBack = () => {
+        if (!currentPath) return;
+        const parts = currentPath.split('\\');
+        parts.pop();
+        setCurrentPath(parts.join('\\'));
+    };
+
+    // --- FILTRADO ---
+    const filteredDocuments = documents.filter((doc) =>
         doc.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // --- FUNCIÓN 1: SUBIR ARCHIVO (GUARDANDO EL ARCHIVO REAL) ---
-    const handleUploadClick = () => {
-        fileInputRef.current?.click();
-    };
-
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            const newDoc: DocumentFile = {
-                id: Date.now(),
-                name: file.name,
-                date: new Date().toISOString().split('T')[0],
-                size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
-                type: file.name.split('.').pop()?.toUpperCase() || 'FILE',
-                fileData: file // ¡IMPORTANTE! Guardamos el archivo aquí
-            };
-            setDocuments([...documents, newDoc]);
-        }
-        // Limpiamos el input para poder subir el mismo archivo si se borra
-        if (event.target) event.target.value = '';
-    };
-
-    // --- FUNCIÓN 2: ELIMINAR ARCHIVO ---
+    const handleUploadClick = () => fileInputRef.current?.click();
+    const handleFileChange = () => { };
     const handleDelete = (docId: number) => {
-        const confirmDelete = window.confirm("¿Estás seguro de eliminar este archivo?");
-        if (confirmDelete) {
-            const updatedList = documents.filter(doc => doc.id !== docId);
-            setDocuments(updatedList);
+        if (window.confirm("¿Eliminar de la vista?")) {
+            setDocuments(documents.filter(d => d.id !== docId));
         }
     };
 
-    // --- FUNCIÓN 3: DESCARGAR ARCHIVO (AHORA SÍ FUNCIONA) ---
+    // --- DESCARGAR ---
     const handleDownload = (doc: DocumentFile) => {
+        if (doc.type === 'FOLDER') return; // No descargar carpetas
+
         if (doc.fileData) {
-            // 1. Creamos una URL temporal para el archivo que está en memoria
             const url = URL.createObjectURL(doc.fileData);
-            
-            // 2. Creamos un enlace invisible
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = doc.name; // Forzamos el nombre de descarga
-            document.body.appendChild(link);
-            
-            // 3. Simulamos el clic para que empiece a bajar
-            link.click();
-            
-            // 4. Limpiamos la memoria
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            const a = document.createElement('a');
+            a.href = url; a.download = doc.name; a.click();
         } else {
-            alert("Error: No se encontró el archivo origen en la memoria.");
+            // SOLUCIÓN AL ERROR DEL SÍMBOLO #:
+            // Usamos encodeURIComponent para que el # no rompa la URL
+            const rutaSegura = encodeURIComponent(doc.relativePath || doc.name);
+            const downloadUrl = `http://localhost:3001/api/descargar/${id}?path=${rutaSegura}`;
+
+            // Abrimos en nueva pestaña
+            window.open(downloadUrl, '_blank');
         }
     };
 
-    // Verificar sesión
+    // Sesión
     useEffect(() => {
-        const session = localStorage.getItem('userSession');
-        if (!session) {
-            navigate('/area'); 
-        }
+        if (!localStorage.getItem('userSession')) navigate('/area');
     }, [navigate]);
-
     const handleLogout = () => {
         localStorage.removeItem('userSession');
         navigate('/area');
@@ -131,17 +134,13 @@ const AreaDashboard = () => {
             <aside className="sidebar-glass">
                 <div className="sidebar-header">
                     <div className="sidebar-logo">INAMHI</div>
-                    <p className="sidebar-role">Administrador</p>
+                    <p className="sidebar-role">Admin</p>
                 </div>
-                
                 <nav className="sidebar-nav">
                     <button className="nav-item active">📂 Documentos</button>
-                    <button className="nav-item">📤 Cargar Archivo</button>
+                    <button className="nav-item">📤 Cargar</button>
                 </nav>
-
-                <button onClick={handleLogout} className="btn-logout">
-                    Cerrar Sesión
-                </button>
+                <button onClick={handleLogout} className="btn-logout">Salir</button>
             </aside>
 
             <main className="main-content">
@@ -149,18 +148,34 @@ const AreaDashboard = () => {
                     <h1 className="dashboard-title">{areaName}</h1>
                     <div className="user-profile">
                         <span className="user-avatar">👤</span>
-                        <span className="user-name">Admin {(id || 'User').toUpperCase()}</span>
+                        <span className="user-name">Admin</span>
                     </div>
                 </header>
 
                 <div className="content-glass">
                     <div className="toolbar">
-                        <h3>Archivos del Área</h3>
-                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <h3>Archivos en Red: {id?.toUpperCase()}</h3>
+
+                        </div>
+
                         <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                            <input 
-                                type="text" 
-                                placeholder="Buscar archivo..." 
+                            {/* BOTÓN REGRESAR */}
+                            {currentPath && (
+                                <button
+                                    onClick={handleGoBack}
+                                    style={{
+                                        background: '#334155', border: 'none', color: 'white',
+                                        padding: '10px 15px', borderRadius: '8px', cursor: 'pointer'
+                                    }}
+                                >
+                                    ⬅ Regresar
+                                </button>
+                            )}
+
+                            <input
+                                type="text"
+                                placeholder="Buscar..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 style={{
@@ -169,75 +184,78 @@ const AreaDashboard = () => {
                                     borderRadius: '8px',
                                     padding: '10px 15px',
                                     color: 'white',
-                                    outline: 'none',
-                                    fontFamily: 'Montserrat, sans-serif'
+                                    outline: 'none'
                                 }}
                             />
-
-                            <input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                style={{ display: 'none' }} 
-                                onChange={handleFileChange}
-                            />
-
-                            <button className="btn-upload-new" onClick={handleUploadClick}>
-                                + Subir Nuevo
-                            </button>
+                            <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} />
+                            <button className="btn-upload-new" onClick={handleUploadClick}>+ Subir Nuevo</button>
                         </div>
                     </div>
 
                     <div className="table-responsive">
-                        <table className="docs-table">
-                            <thead>
-                                <tr>
-                                    <th>Nombre del Archivo</th>
-                                    <th>Fecha de Carga</th>
-                                    <th>Tipo</th>
-                                    <th>Tamaño</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredDocuments.length === 0 ? (
+                        {isLoading ? (
+                            <div style={{ textAlign: 'center', padding: '40px', color: 'white' }}>
+                                🌀 Cargando...
+                            </div>
+                        ) : (
+                            <table className="docs-table">
+                                <thead>
                                     <tr>
-                                        <td colSpan={5} style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>
-                                            No hay documentos cargados. Sube uno nuevo.
-                                        </td>
+                                        <th>Nombre</th>
+                                        <th>Fecha</th>
+                                        <th>Tipo</th>
+                                        <th>Tamaño</th>
+                                        <th>Acciones</th>
                                     </tr>
-                                ) : (
-                                    filteredDocuments.map((doc) => (
-                                        <tr key={doc.id}>
-                                            <td className="col-name">
-                                                <span className="file-icon">📄</span> {doc.name}
+                                </thead>
+                                <tbody>
+                                    {!isLoading && filteredDocuments.length === 0 && (
+                                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: '20px' }}>Carpeta vacía</td></tr>
+                                    )}
+
+                                    {filteredDocuments.map((doc) => (
+                                        <tr key={doc.id}
+                                            // CLIC EN CARPETA
+                                            onClick={() => doc.type === 'FOLDER' && handleFolderClick(doc.name)}
+                                            style={{ cursor: doc.type === 'FOLDER' ? 'pointer' : 'default' }}
+                                            className={doc.type === 'FOLDER' ? 'folder-row' : ''}
+                                        >
+                                            <td className="col-name" style={{ fontWeight: doc.type === 'FOLDER' ? 'bold' : 'normal', color: doc.type === 'FOLDER' ? '#fbbf24' : 'inherit' }}>
+                                                <span className="file-icon">
+                                                    {doc.type === 'FOLDER' ? '📁' : '📄'}
+                                                </span>
+                                                {doc.name}
                                             </td>
                                             <td>{doc.date}</td>
-                                            <td><span className={`badge ${doc.type}`}>{doc.type}</span></td>
+                                            <td><span className={`badge ${doc.type === 'FOLDER' ? 'folder-badge' : doc.type}`}>{doc.type}</span></td>
                                             <td>{doc.size}</td>
                                             <td>
-                                                {/* BOTÓN DESCARGAR */}
-                                                <button 
-                                                    className="btn-action download" 
-                                                    onClick={() => handleDownload(doc)} // Pasamos el objeto doc completo
-                                                    title="Descargar"
-                                                >
-                                                    ⬇
-                                                </button>
-
-                                                {/* BOTÓN BORRAR */}
-                                                <button 
-                                                    className="btn-action delete" 
-                                                    onClick={() => handleDelete(doc.id)}
-                                                    title="Eliminar"
-                                                >
-                                                    🗑
-                                                </button>
+                                                {doc.type !== 'FOLDER' && (
+                                                    <>
+                                                        <button
+                                                            className="btn-action download"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDownload(doc);
+                                                            }}
+                                                            title="Descargar"
+                                                        >⬇</button>
+                                                        <button
+                                                            className="btn-action delete"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDelete(doc.id);
+                                                            }}
+                                                            title="Eliminar de la vista"
+                                                        >🗑️</button>
+                                                    </>
+                                                )}
                                             </td>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                 </div>
             </main>
