@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/AdminDashboard.css';
+import { useEffect } from 'react';
 
 const AUDIT_LOGS = [
     { id: 1, area: 'Tecnologías Info.', action: 'Subida de Archivo', detail: 'manual_redes.pdf', user: 'admin_tic', time: 'Hace 5 min' },
