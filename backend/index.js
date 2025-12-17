@@ -6,7 +6,6 @@ const path = require('path');
 const app = express();
 app.use(cors());
 
-// --- MAPA DE CARPETAS ---
 const CARPETAS_AREAS = {
     'tic': 'tics', 
     'rrhh': 'direccion talento humano',
@@ -21,35 +20,50 @@ const CARPETAS_AREAS = {
 
 const SERVIDOR_IP = '\\\\10.0.5.20'; 
 
-// --- ENDPOINT LISTAR (MODO FUERZA BRUTA) ---
 app.get('/api/archivos/:areaId', (req, res) => {
     const { areaId } = req.params;
     const subpath = req.query.subpath || ''; 
     const nombreCarpetaRaiz = CARPETAS_AREAS[areaId] || CARPETAS_AREAS['default'];
     
-    const rutaCompleta = path.join(SERVIDOR_IP, nombreCarpetaRaiz, subpath);
+    // 1. CONSTRUCCIÓN MANUAL DE RUTA UNC (Más segura que path.join para redes)
+    // Forzamos el uso de barras invertidas de Windows
+    let rutaCompleta = `${SERVIDOR_IP}\\${nombreCarpetaRaiz}\\${subpath}`.replace(/\//g, '\\').replace(/\\+/g, '\\');
+    
+    // Corregir el inicio para que siempre tenga exactamente \\
+    if (!rutaCompleta.startsWith('\\\\')) {
+        rutaCompleta = '\\\\' + rutaCompleta.replace(/^\\+/, '');
+    }
 
-    console.log(`Leyendo: ${rutaCompleta}`);
+    console.log("-----------------------------------------");
+    console.log(`INTENTANDO ACCEDER A: ${rutaCompleta}`);
+
+    // 2. VERIFICACIÓN DE EXISTENCIA ANTES DE LEER
+    if (!fs.existsSync(rutaCompleta)) {
+        console.error(`ERROR: La ruta no existe o el servidor no tiene permiso: ${rutaCompleta}`);
+        return res.status(404).json({ error: "Ruta no encontrada", path: rutaCompleta });
+    }
 
     fs.readdir(rutaCompleta, (err, files) => {
         if (err) {
-            console.error("ERROR LEYENDO:", err.message);
-            // Devolvemos lista vacía para no romper el frontend
+            // Log detallado para diagnosticar en la terminal
+            console.error(`ERROR DE LECTURA (${err.code}): ${err.message}`);
             return res.json([]); 
         }
+
+        console.log(`ÉXITO: Se encontraron ${files.length} elementos en ${areaId}`);
 
         const fileList = files.map((file, index) => {
             try {
                 const fullPath = path.join(rutaCompleta, file);
-                
-                // --- TRUCO PARA REDES WINDOWS ---
+                if (file.startsWith('$') || file.startsWith('~') || file === 'System Volume Information') return null;
+
                 let stats;
                 try {
                     stats = fs.statSync(fullPath);
                 } catch (e) {
-                    // Si falla leer los detalles, ASUMIMOS QUE ES CARPETA para que aparezca
+                    // Si falla el stat (archivo bloqueado), lo enviamos como carpeta por defecto
                     return {
-                        id: index,
+                        id: `err-${index}`,
                         name: file,
                         date: '---',
                         size: '-',
@@ -58,20 +72,15 @@ app.get('/api/archivos/:areaId', (req, res) => {
                     };
                 }
 
-                // Filtrar archivos de sistema
-                if (file.startsWith('$') || file.startsWith('~') || file === 'System Volume Information') return null;
-
                 const esCarpeta = stats.isDirectory();
-                
                 return {
-                    id: index,
+                    id: `${areaId}-${index}`,
                     name: file,
                     date: stats.mtime.toISOString().split('T')[0],
                     size: esCarpeta ? '-' : (stats.size / 1024 / 1024).toFixed(2) + ' MB',
                     type: esCarpeta ? 'FOLDER' : path.extname(file).replace('.', '').toUpperCase() || 'FILE',
                     relativePath: path.join(subpath, file) 
                 };
-
             } catch (e) { return null; }
         }).filter(item => item !== null);
 
@@ -86,24 +95,25 @@ app.get('/api/archivos/:areaId', (req, res) => {
     });
 });
 
-// --- ENDPOINT DESCARGAR (SOLUCIÓN ERROR #) ---
+// Endpoint de descarga corregido
 app.get('/api/descargar/:areaId', (req, res) => {
     const { areaId } = req.params;
-    const relativePath = req.query.path; // Express ya decodifica esto automáticamente
-    
+    const relativePath = req.query.path;
     const nombreCarpetaRaiz = CARPETAS_AREAS[areaId] || CARPETAS_AREAS['default'];
-    const rutaArchivo = path.join(SERVIDOR_IP, nombreCarpetaRaiz, relativePath);
-
-    console.log(`Descargando: ${rutaArchivo}`); // Veremos qué archivo intenta bajar
+    
+    let rutaArchivo = `${SERVIDOR_IP}\\${nombreCarpetaRaiz}\\${relativePath}`.replace(/\//g, '\\').replace(/\\+/g, '\\');
+    if (!rutaArchivo.startsWith('\\\\')) {
+        rutaArchivo = '\\\\' + rutaArchivo.replace(/^\\+/, '');
+    }
 
     res.download(rutaArchivo, (err) => {
         if (err) {
             console.error("Error descarga:", err.message);
-            res.status(404).send("No se encontró el archivo");
+            if(!res.headersSent) res.status(404).send("Archivo no disponible");
         }
     });
 });
 
 app.listen(3001, () => {
-    console.log('Servidor CORREGIDO en puerto 3001');
+    console.log('Servidor de Auditoría corriendo en puerto 3001');
 });
