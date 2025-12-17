@@ -57,13 +57,18 @@ const FILE_ICONS: { [key: string]: string } = {
     'JPG': '/assets/image.png',
     'JPEG': '/assets/image.png',
     'PNG': '/assets/image.png',
-    'DEFAULT': '/assets/file.png' 
+    'LNK': '/assets/ink.png',
+    'XML': '/assets/xml.png',
+    'CONF.XML': '/assets/xml.png',
+    'JS': '/assets/js.png',
+    'DEFAULT': '/assets/file.png' 
 };
 
+
 const AreaDashboard = () => {
-    const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [documents, setDocuments] = useState<DocumentFile[]>([]);
