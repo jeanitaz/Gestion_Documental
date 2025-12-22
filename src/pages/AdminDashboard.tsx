@@ -1,25 +1,68 @@
 import { useNavigate } from 'react-router-dom';
 import '../styles/AdminDashboard.css';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-const AUDIT_LOGS = [
-    { id: 1, area: 'Tecnologías Info.', action: 'Subida de Archivo', detail: 'manual_redes.pdf', user: 'admin_tic', time: 'Hace 5 min' },
-    { id: 2, area: 'Recursos Humanos', action: 'Eliminación', detail: 'nomina_julio.xlsx', user: 'admin_rrhh', time: 'Hace 10 min' },
-    { id: 3, area: 'Hidrometeorología', action: 'Acceso al Sistema', detail: 'Login Exitoso', user: 'admin_hidro', time: 'Hace 25 min' },
-    { id: 4, area: 'Dirección Ejecutiva', action: 'Creación de Carpeta', detail: 'Informes 2025', user: 'admin_dir', time: 'Hace 1 hora' },
-    { id: 5, area: 'Asesoría Jurídica', action: 'Subida de Archivo', detail: 'contrato_001.pdf', user: 'admin_jur', time: 'Hace 2 horas' },
-];
+// Definimos la estructura de los datos para TypeScript
+interface LogEntry {
+    id: number;
+    area: string;
+    action: string;
+    detail: string;
+    user: string;
+    time: string;
+}
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
+    
+    // 1. ESTADOS
+    const [auditLogs, setAuditLogs] = useState<LogEntry[]>([]);
+    const [stats, setStats] = useState({ hoy: 0, areas: 12 });
+
+    // 2. FUNCIONES (Deben ir ANTES del useEffect)
+    
+    const formatTimeAgo = (isoDate: string) => {
+        const date = new Date(isoDate);
+        const now = new Date();
+        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        if (seconds < 60) return 'Hace un momento';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `Hace ${minutes} min`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `Hace ${hours} horas`;
+        return date.toLocaleDateString();
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('userSession');
         navigate('/area');
     };
 
+    // --- ESTA ES LA FUNCIÓN QUE FALTABA O ESTABA MAL UBICADA ---
+    const fetchLogs = async () => {
+        try {
+            const response = await fetch('http://localhost:3001/api/auditoria');
+            if (response.ok) {
+                const data = await response.json();
+                setAuditLogs(data);
+
+                // Calcular estadísticas
+                const todayStr = new Date().toISOString().split('T')[0];
+                const countHoy = data.filter((log: LogEntry) => log.time.startsWith(todayStr)).length;
+                
+                setStats(prev => ({ ...prev, hoy: countHoy }));
+            }
+        } catch (error) {
+            console.error("Error conectando con auditoría:", error);
+        }
+    };
+    // ------------------------------------------------------------
+
+    // 3. USE EFFECT (Ahora sí encontrará fetchLogs)
     useEffect(() => {
         const session = localStorage.getItem('userSession');
+        
         if (!session) {
             navigate('/area');
         } else {
@@ -27,10 +70,19 @@ const AdminDashboard = () => {
             if (parsed.role !== 'super_admin') {
                 alert('Acceso Denegado: Se requiere rol de Super Administrador');
                 navigate('/area');
+            } else {
+                // Cargar datos iniciales
+                fetchLogs();
+
+                // Actualizar automáticamente cada 5 segundos
+                const interval = setInterval(fetchLogs, 5000);
+                return () => clearInterval(interval);
             }
         }
-    }, [navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [navigate]); 
 
+    // 4. RENDERIZADO
     return (
         <div className="admin-container">
             <div className="admin-sidebar">
@@ -51,12 +103,12 @@ const AdminDashboard = () => {
 
                 <div className="stats-grid">
                     <div className="stat-card">
-                        <h3>Archivos Hoy</h3>
-                        <p>124</p>
+                        <h3>Movimientos Hoy</h3>
+                        <p>{stats.hoy}</p>
                     </div>
                     <div className="stat-card">
                         <h3>Áreas Activas</h3>
-                        <p>12</p>
+                        <p>{stats.areas}</p>
                     </div>
                     <div className="stat-card">
                         <h3>Alertas</h3>
@@ -77,20 +129,27 @@ const AdminDashboard = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {AUDIT_LOGS.map(log => (
-                                <tr key={log.id}>
-                                    {/* Color Verde en la tabla */}
-                                    <td style={{ fontWeight: 'bold', color: '#10b981' }}>{log.area}</td>
-                                    <td>{log.user}</td>
-                                    <td>
-                                        <span className={`tag ${log.action.includes('Eliminación') ? 'red' : 'blue'}`}>
-                                            {log.action}
-                                        </span>
+                            {auditLogs.length > 0 ? (
+                                auditLogs.map((log) => (
+                                    <tr key={log.id}>
+                                        <td style={{ fontWeight: 'bold', color: '#10b981' }}>{log.area}</td>
+                                        <td>{log.user}</td>
+                                        <td>
+                                            <span className={`tag ${log.action.includes('Eliminación') ? 'red' : 'blue'}`}>
+                                                {log.action}
+                                            </span>
+                                        </td>
+                                        <td>{log.detail}</td>
+                                        <td>{formatTimeAgo(log.time)}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={5} style={{ textAlign: 'center', padding: '20px' }}>
+                                        Esperando datos del servidor...
                                     </td>
-                                    <td>{log.detail}</td>
-                                    <td>{log.time}</td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
                 </div>

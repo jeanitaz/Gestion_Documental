@@ -34,16 +34,16 @@ interface Area {
 const INITIAL_AREAS: Area[] = [
     { id: 'tic', name: 'Tecnologías de la Información y Comunicación', icon: '💻' },
     { id: 'hidro', name: 'Dirección de Información Hidrometeorológica', icon: '🌧️' },
-    { id: 'rrhh', name: 'Dirección de Admin. de Recursos Humanos', icon: '👥' },
+    { id: 'rrhh', name: 'Dirección de Administración de Recursos Humanos', icon: '👥' },
     { id: 'admin-fin', name: 'Dirección Administrativa Financiera', icon: '📊' },
     { id: 'ejecutiva', name: 'Dirección Ejecutiva', icon: '👔' },
     { id: 'juridica', name: 'Dirección de Asesoría Jurídica', icon: '⚖️' },
     { id: 'com-social', name: 'Dirección de Comunicación Social', icon: '📢' },
     { id: 'planificacion', name: 'Dirección de Planificación', icon: '📅' },
     { id: 'pronosticos', name: 'Dirección de Pronósticos y Alertas', icon: '⚠️' },
-    { id: 'estudios', name: 'Dirección de Estudios e Investigación', icon: '🔬' },
-    { id: 'red-obs', name: 'Red Nacional de Observación', icon: '📡' },
-    { id: 'calidad-agua', name: 'Lab. Nacional Calidad de Agua', icon: '💧' },
+    { id: 'estudios', name: 'Dirección de Estudios, investigación y Desarollo Metereológico', icon: '🔬' },
+    { id: 'red-obs', name: 'Direccion de la Red Nacional de Observación Hidrometereológico', icon: '📡' },
+    { id: 'calidad-agua', name: 'Laboratorio Nacional Calidad de Agua y Sedimentos', icon: '💧' },
 ];
 
 const AreaHome = () => {
@@ -70,12 +70,13 @@ const AreaHome = () => {
     // Estados Crear Área
     const [showAddModal, setShowAddModal] = useState(false);
     const [newAreaName, setNewAreaName] = useState('');
-    const [newAreaId, setNewAreaId] = useState('');
+    // Eliminado: newAreaId ya no se pide
     const [newAreaIcon, setNewAreaIcon] = useState('📂');
     const [newAreaUser, setNewAreaUser] = useState('');
     const [newAreaPass, setNewAreaPass] = useState('');
     const [showCreatePass, setShowCreatePass] = useState(false); 
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [isCreating, setIsCreating] = useState(false); // Estado para loading al crear
 
     // 1. LOGIN DE ÁREA
     const handleLogin = (e: React.FormEvent) => {
@@ -114,17 +115,46 @@ const AreaHome = () => {
         }, 800);
     };
 
-    // 3. GUARDAR NUEVA ÁREA
-    const handleSaveNewArea = (e: React.FormEvent) => {
+    // 3. GUARDAR NUEVA ÁREA (CONEXIÓN AL BACKEND)
+    const handleSaveNewArea = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newAreaName || !newAreaId || !newAreaUser || !newAreaPass) return;
-        const safeId = newAreaId.toLowerCase().replace(/\s+/g, '-');
-        const newArea: Area = { id: safeId, name: newAreaName, icon: newAreaIcon };
-        const newCredential = { id: newArea.id, user: newAreaUser, pass: newAreaPass };
-        setAreaList([...areaList, newArea]);
-        setCredentialsList([...credentialsList, newCredential]);
-        alert('¡Área creada exitosamente!');
-        closeModal();
+        if (!newAreaName || !newAreaUser || !newAreaPass) return;
+
+        setIsCreating(true);
+
+        // Generar ID automático: "Dirección Técnica" -> "direccion-tecnica"
+        const generatedId = newAreaName.toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar tildes
+            .replace(/\s+/g, '-'); // Espacios a guiones
+
+        try {
+            // Llamada al servidor para crear la carpeta física
+            const response = await fetch('http://localhost:3001/api/crear-area', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombreCarpeta: generatedId })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                const newArea: Area = { id: generatedId, name: newAreaName, icon: newAreaIcon };
+                const newCredential = { id: generatedId, user: newAreaUser, pass: newAreaPass };
+                
+                setAreaList([...areaList, newArea]);
+                setCredentialsList([...credentialsList, newCredential]);
+                
+                alert('¡Área creada y carpeta generada en el servidor!');
+                closeModal();
+            } else {
+                alert('Error al crear carpeta: ' + (data.details || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error de conexión con el servidor');
+        } finally {
+            setIsCreating(false);
+        }
     };
 
     const closeModal = () => {
@@ -132,8 +162,9 @@ const AreaHome = () => {
         setShowAddModal(false);
         setShowAdminModal(false);
         setUsername(''); setPassword(''); setAdminUser(''); setAdminPass(''); setError(''); setIsLoading(false);
-        setNewAreaName(''); setNewAreaId(''); setNewAreaIcon('📂'); setNewAreaUser(''); setNewAreaPass('');
+        setNewAreaName(''); setNewAreaIcon('📂'); setNewAreaUser(''); setNewAreaPass('');
         setShowLoginPass(false); setShowCreatePass(false); setShowAdminPass(false); setShowEmojiPicker(false);
+        setIsCreating(false);
     };
 
     return (
@@ -146,7 +177,6 @@ const AreaHome = () => {
                 {/* HEADER */}
                 <div className="area-header-container">
                     <h2 className="area-title">Selecciona tu Área</h2>
-                    {/* Botón Auditoría (Ahora es verde) */}
                     <button className="btn-audit-corner" onClick={() => setShowAdminModal(true)}>
                         🛡️ AUDITORÍA
                     </button>
@@ -201,23 +231,19 @@ const AreaHome = () => {
                 </div>
             )}
 
-            {/* --- MODAL 2: LOGIN ADMIN (AUDITORÍA - VERDE) --- */}
+            {/* --- MODAL 2: LOGIN ADMIN (AUDITORÍA) --- */}
             {showAdminModal && (
                 <div className="modal-overlay" onClick={closeModal}>
-                    {/* Borde Verde */}
                     <div className="modal-glass" onClick={(e) => e.stopPropagation()} style={{ borderColor: '#10b981' }}>
                         <button className="btn-close-modal" onClick={closeModal}>✕</button>
                         <div className="modal-header">
                             <div className="modal-icon-wrapper" style={{ filter: 'drop-shadow(0 0 15px rgba(16, 185, 129, 0.4))' }}>🛡️</div>
-                            {/* Título Gradiente Verde */}
                             <h3 className="modal-area-name" style={{ backgroundImage: 'linear-gradient(to right, #fff, #10b981)' }}>Auditoría General</h3>
                             <p className="modal-instruction">Acceso exclusivo Super Administrador</p>
                         </div>
                         <form className="login-form" onSubmit={handleAdminLogin}>
                             <div className="input-group">
-                                {/* Labels Verdes */}
                                 <label style={{ color: '#10b981' }}>Usuario Admin</label>
-                                {/* Inputs con Borde Verde Tenue */}
                                 <input type="text" value={adminUser} onChange={(e) => setAdminUser(e.target.value)} autoFocus required style={{ borderColor: 'rgba(16, 185, 129, 0.3)' }} />
                             </div>
                             <div className="input-group password-group">
@@ -227,9 +253,7 @@ const AreaHome = () => {
                                     <span className="password-toggle" onClick={() => setShowAdminPass(!showAdminPass)}>{showAdminPass ? '👁️' : '🔒'}</span>
                                 </div>
                             </div>
-                            {/* Mensaje de Error Verde/Rojo */}
                             {error && <div className="error-message" style={{ borderColor: '#10b981', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)' }}>⚠️ {error}</div>}
-                            {/* Botón con Gradiente Verde */}
                             <button type="submit" className="btn-login-glow" disabled={isLoading} style={{ background: 'linear-gradient(90deg, #059669, #10b981)', color: 'white' }}>
                                 {isLoading ? 'VERIFICANDO...' : 'ACCEDER AL PANEL'}
                             </button>
@@ -238,7 +262,7 @@ const AreaHome = () => {
                 </div>
             )}
 
-            {/* --- MODAL 3: CREAR ÁREA --- */}
+            {/* --- MODAL 3: CREAR ÁREA (MODIFICADO) --- */}
             {showAddModal && (
                 <div className="modal-overlay" onClick={closeModal}>
                     <div className="modal-glass modal-large" onClick={(e) => e.stopPropagation()}>
@@ -246,17 +270,16 @@ const AreaHome = () => {
                         <div className="modal-header">
                             <div className="modal-icon-wrapper">✨</div>
                             <h3 className="modal-area-name">Crear Nueva Área</h3>
-                            <p className="modal-instruction">Ingresa los datos y credenciales</p>
+                            <p className="modal-instruction">La carpeta se creará automáticamente en el servidor</p>
                         </div>
                         <form className="login-form scroll-form" onSubmit={handleSaveNewArea}>
                             <div className="input-group">
                                 <label>Nombre del Área</label>
                                 <input type="text" placeholder="Ej: Dirección de Transportes" value={newAreaName} onChange={(e) => setNewAreaName(e.target.value)} autoFocus required />
                             </div>
-                            <div className="input-group">
-                                <label>ID Único (sin espacios)</label>
-                                <input type="text" placeholder="Ej: transportes" value={newAreaId} onChange={(e) => setNewAreaId(e.target.value)} required />
-                            </div>
+                            
+                            {/* CAMPO ID ELIMINADO */}
+
                             <div className="input-group">
                                 <label>Ícono</label>
                                 <div className="emoji-input-trigger" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
@@ -283,7 +306,9 @@ const AreaHome = () => {
                                     <span className="password-toggle" onClick={() => setShowCreatePass(!showCreatePass)}>{showCreatePass ? '👁️' : '🔒'}</span>
                                 </div>
                             </div>
-                            <button type="submit" className="btn-login-glow" style={{ marginTop: '15px' }}>GUARDAR NUEVA ÁREA</button>
+                            <button type="submit" className="btn-login-glow" style={{ marginTop: '15px' }} disabled={isCreating}>
+                                {isCreating ? 'CREANDO CARPETA...' : 'GUARDAR NUEVA ÁREA'}
+                            </button>
                         </form>
                     </div>
                 </div>

@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1766440526524,
+    "area": "DIRECCION TALENTO HUMANO",
+    "user": "undefined",
+    "action": "Subida de Archivo",
+    "detail": "Archivo: file.png",
+    "time": "2025-12-22T21:55:26.524Z"
+  },
+  {
+    "id": 1766440512511,
+    "area": "DIRECCION TALENTO HUMANO",
+    "user": "Empleado",
+    "action": "Creación de Carpeta",
+    "detail": "Carpeta: criko",
+    "time": "2025-12-22T21:55:12.511Z"
+  },
+  {
+    "id": 1766439776862,
+    "area": "DIRECCION TALENTO HUMANO",
+    "user": "undefined",
+    "action": "Subida de Archivo",
+    "detail": "Archivo: file.png",
+    "time": "2025-12-22T21:42:56.862Z"
+  },
+  {
+    "id": 1766439772240,
+    "area": "DIRECCION TALENTO HUMANO",
+    "user": "Empleado",
+    "action": "Creación de Carpeta",
+    "detail": "Carpeta: Prueba 3",
+    "time": "2025-12-22T21:42:52.240Z"
+  },
+  {
+    "id": 1766439649529,
+    "area": "TICS",
+    "user": "Empleado",
+    "action": "Creación de Carpeta",
+    "detail": "Carpeta: Prueba tres",
+    "time": "2025-12-22T21:40:49.529Z"
+  },
+  {
+    "id": 1766439549484,
+    "area": "TICS",
+    "user": "Empleado",
+    "action": "Creación de Carpeta",
+    "detail": "Carpeta: Andres",
+    "time": "2025-12-22T21:39:09.484Z"
+  },
+  {
+    "id": 1766438393232,
+    "area": "TICS",
+    "user": "Usuario Registrado",
+    "action": "Subida de Archivo",
+    "detail": "Archivo subido: file.png",
+    "time": "2025-12-22T21:19:53.232Z"
+  }
+]
