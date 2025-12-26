@@ -1,0 +1,69 @@
+[
+  {
+    "id": "tic",
+    "name": "Tecnologías de la Información y Comunicación",
+    "icon": "💻"
+  },
+  {
+    "id": "hidro",
+    "name": "Dirección de Información Hidrometeorológica",
+    "icon": "🌧️"
+  },
+  {
+    "id": "rrhh",
+    "name": "Dirección de Administración de Recursos Humanos",
+    "icon": "👥"
+  },
+  {
+    "id": "admin-fin",
+    "name": "Dirección Administrativa Financiera",
+    "icon": "📊"
+  },
+  {
+    "id": "ejecutiva",
+    "name": "Dirección Ejecutiva",
+    "icon": "👔"
+  },
+  {
+    "id": "juridica",
+    "name": "Dirección de Asesoría Jurídica",
+    "icon": "⚖️"
+  },
+  {
+    "id": "com-social",
+    "name": "Dirección de Comunicación Social",
+    "icon": "📢"
+  },
+  {
+    "id": "planificacion",
+    "name": "Dirección de Planificación",
+    "icon": "📅"
+  },
+  {
+    "id": "pronosticos",
+    "name": "Dirección de Pronósticos y Alertas",
+    "icon": "⚠️"
+  },
+  {
+    "id": "estudios",
+    "name": "Dirección de Estudios, investigación y Desarollo Metereológico",
+    "icon": "🔬"
+  },
+  {
+    "id": "red-obs",
+    "name": "Direccion de la Red Nacional de Observación Hidrometereológico",
+    "icon": "📡"
+  },
+  {
+    "id": "calidad-agua",
+    "name": "Laboratorio Nacional Calidad de Agua y Sedimentos",
+    "icon": "💧"
+  },
+  {
+    "id": "andres",
+    "name": "Andres",
+    "icon": "🌧️",
+    "user": "andres@inamhi.gob.ec",
+    "pass": "123"
+  }
+]

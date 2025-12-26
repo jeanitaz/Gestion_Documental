@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import '../styles/AreaDashboard.css';
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 interface AreaInfo {
     id: string;
@@ -8,7 +8,7 @@ interface AreaInfo {
 }
 
 interface DocumentFile {
-    id: number;
+    id: string;
     name: string;
     date: string;
     size: string;
@@ -36,6 +36,8 @@ const FILE_ICONS: { [key: string]: string } = {
     'DOCX': 'https://cdn-icons-png.flaticon.com/512/337/337932.png',
     'XLSX': 'https://cdn-icons-png.flaticon.com/512/337/337958.png',
     'ZIP': 'https://cdn-icons-png.flaticon.com/512/337/337949.png',
+    'PNG': 'https://cdn-icons-png.flaticon.com/512/337/337948.png',
+    'JPG': 'https://cdn-icons-png.flaticon.com/512/337/337948.png',
     'DEFAULT': 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png'
 };
 
@@ -53,10 +55,10 @@ const AreaDashboard = () => {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
     const foundArea = AREA_DATA.find(area => area.id === id);
-    const areaName = foundArea ? foundArea.label : 'Gestión Documental';
+    const areaName = foundArea ? foundArea.label : id?.toUpperCase().replace('-', ' ') || 'Gestión Documental';
 
     const getFileIcon = (fileType: string) => {
-        const typeUpper = fileType.toUpperCase();
+        const typeUpper = fileType ? fileType.toUpperCase() : 'DEFAULT';
         return FILE_ICONS[typeUpper] || FILE_ICONS['DEFAULT'];
     };
 
@@ -81,11 +83,12 @@ const AreaDashboard = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, currentPath]);
 
-    // --- FUNCIÓN SUBIR ARCHIVOS (Corregida) ---
+    // --- FUNCIÓN SUBIR ARCHIVOS ---
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (!files || files.length === 0) return;
         const fileToUpload = files[0];
+        
         const formData = new FormData();
         formData.append('archivo', fileToUpload);
         formData.append('areaId', id || '');
@@ -95,7 +98,7 @@ const AreaDashboard = () => {
         let usuarioNombre = 'Usuario Web';
         if (session) {
             const parsed = JSON.parse(session);
-            usuarioNombre = parsed.username || parsed.email;
+            usuarioNombre = parsed.user || parsed.email;
         }
         formData.append('usuario', usuarioNombre);
 
@@ -112,7 +115,6 @@ const AreaDashboard = () => {
                 alert('❌ Error al subir el archivo');
             }
         } catch (error) {
-            // AQUÍ ESTABA EL ERROR: Debemos usar la variable 'error'
             console.error("Detalle del error:", error); 
             alert('❌ Error de conexión al subir');
         } finally {
@@ -121,7 +123,7 @@ const AreaDashboard = () => {
         }
     };
 
-    // --- FUNCIÓN CREAR CARPETA ---
+    // --- FUNCIÓN CREAR CARPETA (SUB-CARPETA) ---
     const handleCreateFolder = async () => {
         const folderName = prompt("Ingrese el nombre de la nueva carpeta:");
         if (!folderName || folderName.trim() === "") return;
@@ -130,7 +132,7 @@ const AreaDashboard = () => {
         let usuarioNombre = 'Usuario Web';
         if (session) {
             const parsed = JSON.parse(session);
-            usuarioNombre = parsed.username || parsed.email;
+            usuarioNombre = parsed.user || parsed.email;
         }
 
         try {

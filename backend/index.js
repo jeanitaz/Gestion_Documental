@@ -9,36 +9,64 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Configuración temporal de Multer
 const upload = multer({ dest: 'uploads/' });
 
 // ==========================================
-// CONFIGURACIÓN ADMINISTRATIVA
+// CONFIGURACIÓN DEL SERVIDOR
 // ==========================================
-const SERVIDOR_IP = '10.0.5.20';
-const SERVER_USER = 'Administrator';
-const SERVER_PASS = 'In@mH12021'; 
+const SERVIDOR_IP = '10.0.153.189';
+const SERVER_USER = 'INAMHI\\dominio'; 
+const SERVER_PASS = 'Tics2025@@'; 
+const CARPETA_BASE = 'prueba'; 
+
 const RUTA_LOGS = path.join(__dirname, 'audit_logs.json'); 
+const RUTA_AREAS = path.join(__dirname, 'areas.json'); 
 
-// Mapeo de IDs a nombres reales (Asegúrate de que coincidan con tus carpetas en el servidor)
-const MAPEO_NOMBRES = { 
-    'tic': 'tics', 
-    'rrhh': 'direccion talento humano',
-    'hidro': 'direccion de informacion hidrometeorologica',
-    'admin-fin': 'direccion administrativa financiera',
-    'ejecutiva': 'direccion ejecutiva',
-    'juridica': 'direccion de asesoria juridica',
-    'com-social': 'direccion de comunicacion social',
-    'planificacion': 'direccion de planificacion',
-    'pronosticos': 'direccion de pronosticos y alertas',
-    'estudios': 'direccion de estudios investigacion y desarrollo',
-    'red-obs': 'direccion de la red nacional de observacion',
-    'calidad-agua': 'laboratorio nacional de calidad de agua'
-};
+// Áreas base (Solo metadatos para el frontend)
+const AREAS_INICIALES = [
+    { id: 'tic', name: 'Tecnologías de la Información y Comunicación', icon: '💻', folder: 'tics' },
+    { id: 'hidro', name: 'Dirección de Información Hidrometeorológica', icon: '🌧️', folder: 'direccion de informacion hidrometeorologica' },
+    { id: 'rrhh', name: 'Dirección de Administración de Recursos Humanos', icon: '👥', folder: 'direccion talento humano' },
+    { id: 'admin-fin', name: 'Dirección Administrativa Financiera', icon: '📊', folder: 'direccion administrativa financiera' },
+    { id: 'ejecutiva', name: 'Dirección Ejecutiva', icon: '👔', folder: 'direccion ejecutiva' },
+    { id: 'juridica', name: 'Dirección de Asesoría Jurídica', icon: '⚖️', folder: 'direccion de asesoria juridica' },
+    { id: 'com-social', name: 'Dirección de Comunicación Social', icon: '📢', folder: 'direccion de comunicacion social' },
+    { id: 'planificacion', name: 'Dirección de Planificación', icon: '📅', folder: 'direccion de planificacion' },
+    { id: 'pronosticos', name: 'Dirección de Pronósticos y Alertas', icon: '⚠️', folder: 'direccion de pronosticos y alertas' },
+    { id: 'estudios', name: 'Dirección de Estudios, investigación y Desarollo', icon: '🔬', folder: 'direccion de estudios investigacion y desarrollo' },
+    { id: 'red-obs', name: 'Direccion de la Red Nacional de Observación', icon: '📡', folder: 'direccion de la red nacional de observacion' },
+    { id: 'calidad-agua', name: 'Laboratorio Nacional Calidad de Agua', icon: '💧', folder: 'laboratorio nacional de calidad de agua' }
+];
 
-// ==========================================
-// FUNCIÓN PARA REGISTRAR AUDITORÍA
-// ==========================================
+// --- FUNCIONES AUXILIARES ÁREAS ---
+function getAreas() {
+    try {
+        if (fs.existsSync(RUTA_AREAS)) {
+            const data = fs.readFileSync(RUTA_AREAS, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (e) { console.error("Error leyendo areas.json", e); }
+    return AREAS_INICIALES;
+}
+
+function saveArea(newArea) {
+    const areas = getAreas();
+    if (!areas.find(a => a.id === newArea.id)) {
+        areas.push(newArea);
+        fs.writeFileSync(RUTA_AREAS, JSON.stringify(areas, null, 2));
+    }
+}
+
+// Obtener ruta física
+function getNetworkPath(areaId, subpath = '') {
+    const areas = getAreas();
+    const area = areas.find(a => a.id === areaId);
+    const folderName = area ? (area.folder || area.id) : areaId;
+    const cleanSubpath = (subpath && subpath !== 'undefined' && subpath !== 'null') ? subpath : '';
+    return `\\\\${SERVIDOR_IP}\\${CARPETA_BASE}\\${folderName}\\${cleanSubpath}`;
+}
+
+// --- AUDITORÍA ---
 function registrarAuditoria(area, usuario, accion, detalle) {
     const nuevoLog = {
         id: Date.now(),
@@ -48,162 +76,133 @@ function registrarAuditoria(area, usuario, accion, detalle) {
         detail: detalle,
         time: new Date().toISOString()
     };
-
     let logs = [];
     try {
-        if (fs.existsSync(RUTA_LOGS)) {
-            const data = fs.readFileSync(RUTA_LOGS, 'utf8');
-            logs = JSON.parse(data);
-        }
-    } catch (error) {
-        console.error("Creando nuevo archivo de logs.");
-    }
-
+        if (fs.existsSync(RUTA_LOGS)) logs = JSON.parse(fs.readFileSync(RUTA_LOGS, 'utf8'));
+    } catch (error) {}
     logs.unshift(nuevoLog);
     if (logs.length > 500) logs = logs.slice(0, 500);
-
-    try {
-        fs.writeFileSync(RUTA_LOGS, JSON.stringify(logs, null, 2));
-    } catch (error) {
-        console.error("Error guardando log:", error);
-    }
+    try { fs.writeFileSync(RUTA_LOGS, JSON.stringify(logs, null, 2)); } catch (e) {}
 }
 
-// ==========================================
-// ENDPOINT: OBTENER AUDITORÍA
-// ==========================================
+// --- ENDPOINTS ---
+
+app.get('/api/areas', (req, res) => {
+    res.json(getAreas());
+});
+
 app.get('/api/auditoria', (req, res) => {
     try {
         if (!fs.existsSync(RUTA_LOGS)) return res.json([]);
-        const data = fs.readFileSync(RUTA_LOGS, 'utf8');
-        res.json(JSON.parse(data));
-    } catch (error) {
-        res.status(500).json({ error: "Error leyendo auditoría" });
-    }
+        res.json(JSON.parse(fs.readFileSync(RUTA_LOGS, 'utf8')));
+    } catch (e) { res.status(500).json([]); }
 });
 
-// ==========================================
-// ENDPOINT: SUBIR ARCHIVO
-// ==========================================
-app.post('/api/subir', upload.single('archivo'), (req, res) => {
-    const { areaId, rutaActual, usuario } = req.body;
-    const file = req.file;
-
-    if (!file) return res.status(400).json({ error: "No se envió ningún archivo" });
-
-    const nombreAreaReal = MAPEO_NOMBRES[areaId] || areaId;
-    const subpath = (rutaActual && rutaActual !== 'undefined' && rutaActual !== 'null') ? rutaActual : '';
-    const destinoRed = `\\\\${SERVIDOR_IP}\\${nombreAreaReal}\\${subpath}\\${file.originalname}`;
-    
-    // Conectamos y copiamos
-    exec(`net use "\\\\${SERVIDOR_IP}\\IPC$" /user:${SERVER_USER} "${SERVER_PASS}"`, (err) => {
-        fs.copyFile(file.path, destinoRed, (errCopy) => {
-            // Borramos el temporal siempre
-            fs.unlink(file.path, () => {}); 
-
-            if (errCopy) {
-                console.error("Error subida:", errCopy);
-                return res.status(500).json({ error: "Error al guardar en el servidor remoto" });
-            }
-
-            registrarAuditoria(nombreAreaReal.toUpperCase(), usuario || 'Empleado', 'Subida de Archivo', `Archivo: ${file.originalname}`);
-            res.json({ success: true, message: "Archivo subido correctamente" });
-        });
-    });
-});
-
-// ==========================================
-// ENDPOINT: CREAR CARPETA (CORREGIDO Y POTENCIADO)
-// ==========================================
-app.post('/api/crear-carpeta', (req, res) => {
-    const { areaId, rutaActual, nombreCarpeta, usuario } = req.body;
-
-    if (!nombreCarpeta) return res.status(400).json({ error: "Nombre requerido" });
-
-    const nombreAreaReal = MAPEO_NOMBRES[areaId] || areaId;
-    // Limpiamos la ruta actual para evitar problemas con 'undefined'
-    const subpath = (rutaActual && rutaActual !== 'undefined' && rutaActual !== 'null') ? rutaActual : '';
-    
-    // Ruta completa
-    const rutaNuevaCarpeta = `\\\\${SERVIDOR_IP}\\${nombreAreaReal}\\${subpath}\\${nombreCarpeta}`;
-
-    console.log(`Intentando crear: ${rutaNuevaCarpeta}`);
-
-    // COMANDO PODEROSO: Autentica y ejecuta mkdir en la misma línea de comandos
-    // El "&&" asegura que si conecta, ejecuta el mkdir
-    const comando = `net use "\\\\${SERVIDOR_IP}\\IPC$" /user:${SERVER_USER} "${SERVER_PASS}" && cmd /c mkdir "${rutaNuevaCarpeta}"`;
-
-    exec(comando, (error, stdout, stderr) => {
-        if (error) {
-            console.error("Error al crear carpeta:", stderr || error.message);
-            // Si el error dice que ya existe, avisamos
-            if (stderr && stderr.includes('exist')) {
-                return res.status(400).json({ success: false, message: "La carpeta ya existe" });
-            }
-            return res.status(500).json({ error: "No se pudo crear la carpeta (Permisos o Red)" });
-        }
-
-        console.log("Carpeta creada:", stdout);
-
-        registrarAuditoria(
-            nombreAreaReal.toUpperCase(), 
-            usuario || 'Empleado', 
-            'Creación de Carpeta', 
-            `Carpeta: ${nombreCarpeta}`
-        );
-
-        res.json({ success: true, message: "Carpeta creada exitosamente" });
-    });
-});
-
-// ==========================================
-// ENDPOINT: LISTAR ARCHIVOS
-// ==========================================
 app.get('/api/archivos/:areaId', (req, res) => {
     const { areaId } = req.params;
     const subpath = req.query.subpath || ''; 
-    const nombreReal = MAPEO_NOMBRES[areaId] || areaId;
-    const rutaCompleta = `\\\\${SERVIDOR_IP}\\${nombreReal}\\${subpath}`; 
+    const rutaCompleta = getNetworkPath(areaId, subpath);
 
     exec(`net use "\\\\${SERVIDOR_IP}\\IPC$" /user:${SERVER_USER} "${SERVER_PASS}"`, () => {
         if (!fs.existsSync(rutaCompleta)) {
-            return res.status(404).json({ error: "Carpeta no encontrada", path: rutaCompleta });
+            // Ya no intentamos crearla automáticamente al entrar, solo reportamos error si no existe
+            // a menos que sea una subcarpeta creada por la app, pero la raíz debe existir.
+            return res.status(404).json({ error: "Carpeta no encontrada o sin acceso" });
         }
+        
         fs.readdir(rutaCompleta, (err, files) => {
             if (err) return res.json([]);
             const fileList = files.map((file, i) => {
                 try {
                     const fullPath = path.join(rutaCompleta, file);
-                    if (file.startsWith('$') || file === 'System Volume Information') return null;
+                    if (file.startsWith('$') || file === 'System Volume Information' || file === 'Thumbs.db') return null;
                     let stats = fs.statSync(fullPath);
                     return {
-                        id: `${areaId}-${i}`,
+                        id: `${areaId}-${i}-${Date.now()}`,
                         name: file,
                         date: stats.mtime.toISOString().split('T')[0],
                         size: stats.isDirectory() ? '-' : (stats.size/1024/1024).toFixed(2) + ' MB',
-                        type: stats.isDirectory() ? 'FOLDER' : 'FILE',
+                        type: stats.isDirectory() ? 'FOLDER' : path.extname(file).replace('.', '').toUpperCase() || 'FILE',
                         relativePath: path.join(subpath, file)
                     };
                 } catch (e) { return null; }
             }).filter(Boolean);
-            
             fileList.sort((a, b) => (a.type === 'FOLDER' ? -1 : 1));
             res.json(fileList);
         });
     });
 });
 
-// ==========================================
-// ENDPOINT: DESCARGAR
-// ==========================================
+app.post('/api/subir', upload.single('archivo'), (req, res) => {
+    const { areaId, rutaActual, usuario } = req.body;
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: "Falta archivo" });
+
+    const directorioDestino = getNetworkPath(areaId, rutaActual);
+    const destinoFinal = path.join(directorioDestino, file.originalname);
+    
+    exec(`net use "\\\\${SERVIDOR_IP}\\IPC$" /user:${SERVER_USER} "${SERVER_PASS}"`, (err) => {
+        // Aquí sí creamos carpetas recursivas si es necesario para guardar el archivo
+        if (!fs.existsSync(directorioDestino)) {
+             try { fs.mkdirSync(directorioDestino, { recursive: true }); } catch(e){}
+        }
+        
+        fs.copyFile(file.path, destinoFinal, (errCopy) => {
+            fs.unlink(file.path, () => {}); 
+            if (errCopy) return res.status(500).json({ error: "Error escritura" });
+            registrarAuditoria(areaId, usuario, 'Subida', `Archivo: ${file.originalname}`);
+            res.json({ success: true });
+        });
+    });
+});
+
+app.post('/api/crear-carpeta', (req, res) => {
+    const { areaId, rutaActual, nombreCarpeta, usuario } = req.body;
+    const rutaBase = getNetworkPath(areaId, rutaActual);
+    const nuevaRuta = path.join(rutaBase, nombreCarpeta);
+    
+    exec(`net use "\\\\${SERVIDOR_IP}\\IPC$" /user:${SERVER_USER} "${SERVER_PASS}" && cmd /c mkdir "${nuevaRuta}"`, (error) => {
+        if (error) return res.status(500).json({ error: "Falló crear carpeta" });
+        registrarAuditoria(areaId, usuario, 'Carpeta Nueva', nombreCarpeta);
+        res.json({ success: true });
+    });
+});
+
+app.post('/api/crear-area', (req, res) => {
+    const { nombreCarpeta, nombreVisible, icono, usuario, pass } = req.body;
+    // Crear carpeta física en raíz de 'prueba'
+    const rutaNueva = `\\\\${SERVIDOR_IP}\\${CARPETA_BASE}\\${nombreCarpeta}`;
+    
+    exec(`net use "\\\\${SERVIDOR_IP}\\IPC$" /user:${SERVER_USER} "${SERVER_PASS}" && cmd /c mkdir "${rutaNueva}"`, (error) => {
+        if (error) return res.status(500).json({ success: false, details: "Error al crear carpeta física" });
+        
+        // Guardar metadata en JSON
+        const newArea = { 
+            id: nombreCarpeta, 
+            name: nombreVisible, 
+            icon: icono, 
+            user: usuario, 
+            pass: pass 
+        };
+        saveArea(newArea);
+        res.json({ success: true });
+    });
+});
+
 app.get('/api/descargar/:areaId', (req, res) => {
     const { areaId } = req.params;
     const relativePath = req.query.path;
-    const nombreReal = MAPEO_NOMBRES[areaId] || areaId;
-    res.download(`\\\\${SERVIDOR_IP}\\${nombreReal}\\${relativePath}`);
+    const directorioBase = getNetworkPath(areaId);
+    res.download(path.join(directorioBase, relativePath), (err) => { if(err) console.error(err); });
 });
 
+// SIN INICIALIZACIÓN AUTOMÁTICA DE CARPETAS
 app.listen(3001, () => {
-    console.log('✅ Servidor 3001 LISTO');
+    console.log('✅ Servidor 3001 LISTO - (Sin auto-creación de carpetas)');
     if (!fs.existsSync('uploads')) fs.mkdirSync('uploads');
+    
+    // Aseguramos que exista el archivo de áreas para que el frontend no falle
+    if (!fs.existsSync(RUTA_AREAS)) {
+        fs.writeFileSync(RUTA_AREAS, JSON.stringify(AREAS_INICIALES, null, 2));
+    }
 });

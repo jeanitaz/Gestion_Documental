@@ -1,5 +1,93 @@
 [
   {
+    "id": 1766779068988,
+    "area": "TICS",
+    "user": "admin_tic@inamhi.gob.ec",
+    "action": "Creación de Carpeta",
+    "detail": "Carpeta: prueba12",
+    "time": "2025-12-26T19:57:48.988Z"
+  },
+  {
+    "id": 1766778500439,
+    "area": "TICS",
+    "user": "admin_tic@inamhi.gob.ec",
+    "action": "Subida de Archivo",
+    "detail": "Archivo: ACTIVIDAD AUTONOMA FALCON JOSE APLICACIONES MOVILES III.pdf",
+    "time": "2025-12-26T19:48:20.439Z"
+  },
+  {
+    "id": 1766778491893,
+    "area": "TICS",
+    "user": "admin_tic@inamhi.gob.ec",
+    "action": "Subida de Archivo",
+    "detail": "Archivo: dat.jpg",
+    "time": "2025-12-26T19:48:11.893Z"
+  },
+  {
+    "id": 1766778074885,
+    "area": "TICS",
+    "user": "admin_tic@inamhi.gob.ec",
+    "action": "Creación de Carpeta",
+    "detail": "Carpeta: tic213",
+    "time": "2025-12-26T19:41:14.885Z"
+  },
+  {
+    "id": 1766777973421,
+    "area": "TICS",
+    "user": "admin_tic@inamhi.gob.ec",
+    "action": "Creación de Carpeta",
+    "detail": "Carpeta: csaascsa",
+    "time": "2025-12-26T19:39:33.421Z"
+  },
+  {
+    "id": 1766777899815,
+    "area": "DIRECCION TALENTO HUMANO",
+    "user": "admin_rrhh@inamhi.gob.ec",
+    "action": "Creación de Carpeta",
+    "detail": "Carpeta: rrhh",
+    "time": "2025-12-26T19:38:19.815Z"
+  },
+  {
+    "id": 1766777872776,
+    "area": "TICS",
+    "user": "admin_tic@inamhi.gob.ec",
+    "action": "Creación de Carpeta",
+    "detail": "Carpeta: ola",
+    "time": "2025-12-26T19:37:52.776Z"
+  },
+  {
+    "id": 1766520065769,
+    "area": "DIRECCION TALENTO HUMANO",
+    "user": "undefined",
+    "action": "Subida de Archivo",
+    "detail": "Archivo: file.png",
+    "time": "2025-12-23T20:01:05.769Z"
+  },
+  {
+    "id": 1766520053737,
+    "area": "DIRECCION TALENTO HUMANO",
+    "user": "Empleado",
+    "action": "Creación de Carpeta",
+    "detail": "Carpeta: prueba",
+    "time": "2025-12-23T20:00:53.737Z"
+  },
+  {
+    "id": 1766520010062,
+    "area": "TICS",
+    "user": "undefined",
+    "action": "Subida de Archivo",
+    "detail": "Archivo: file.png",
+    "time": "2025-12-23T20:00:10.062Z"
+  },
+  {
+    "id": 1766519993071,
+    "area": "TICS",
+    "user": "Empleado",
+    "action": "Creación de Carpeta",
+    "detail": "Carpeta: carpeta",
+    "time": "2025-12-23T19:59:53.071Z"
+  },
+  {
     "id": 1766440526524,
     "area": "DIRECCION TALENTO HUMANO",
     "user": "undefined",
