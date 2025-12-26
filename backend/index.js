@@ -198,7 +198,7 @@ app.get('/api/descargar/:areaId', (req, res) => {
 
 // SIN INICIALIZACIÓN AUTOMÁTICA DE CARPETAS
 app.listen(3001, () => {
-    console.log('✅ Servidor 3001 LISTO - (Sin auto-creación de carpetas)');
+    console.log('✅ Servidor 3001 LISTO');
     if (!fs.existsSync('uploads')) fs.mkdirSync('uploads');
     
     // Aseguramos que exista el archivo de áreas para que el frontend no falle
