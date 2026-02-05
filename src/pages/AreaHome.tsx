@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import '../styles/AreaHome.css'; 
 
-// Las credenciales fijas se mantienen como respaldo
+// Credenciales fijas como respaldo (solo para las áreas viejas hardcodeadas)
 const FIXED_CREDENTIALS = [
     { id: 'tic',          user: 'tic@inamhi.gob.ec', pass: 'tic123' },
     { id: 'hidro',        user: 'hidro@inamhi.gob.ec', pass: 'hidro123' },
@@ -22,8 +22,8 @@ interface Area {
     id: string;
     name: string;
     icon: string;
-    user?: string; // Opcional, viene del backend
-    pass?: string; // Opcional, viene del backend
+    user?: string; // Viene del backend para áreas nuevas
+    pass?: string; // Viene del backend para áreas nuevas
 }
 
 const AreaHome: React.FC = () => {
@@ -48,10 +48,11 @@ const AreaHome: React.FC = () => {
     useEffect(() => {
         const fetchAreas = async () => {
             try {
-                const response = await fetch('http://localhost:3001/api/areas');
+                // AQUÍ ESTÁ LA MAGIA: Pide la lista actualizada al backend
+                const response = await fetch('/api/areas');
                 if (response.ok) {
                     const data = await response.json();
-                    setAreaList(data);
+                    setAreaList(data); // Actualiza la lista con las áreas nuevas y viejas
                 } else {
                     console.error("Error al cargar áreas");
                 }
@@ -83,7 +84,7 @@ const AreaHome: React.FC = () => {
                     isValid = true;
                 }
 
-                // 3. Backdoor admin
+                // 3. Backdoor admin (opcional)
                 if (username === 'admin' && password === 'admin') isValid = true;
 
                 if (isValid) {
@@ -123,7 +124,7 @@ const AreaHome: React.FC = () => {
 
     return (
         <div className="area-home-container">
-            {/* Fondo animado (se ocultará por CSS si pones imagen de fondo) */}
+            {/* Fondo animado */}
             <div className="weather-bg-animation"></div>
             <div className="particles"><span></span><span></span><span></span><span></span><span></span></div>
 
@@ -151,7 +152,8 @@ const AreaHome: React.FC = () => {
                 </div>
                 
                 <div className="area-footer">
-                    <Link to="/" className="btn-back">← Regresar al Inicio</Link>
+                    {/* Botón opcional si tienes landing page */}
+                    {/* <Link to="/" className="btn-back">← Regresar al Inicio</Link> */}
                 </div>
             </div>
 

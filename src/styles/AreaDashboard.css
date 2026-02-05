@@ -418,3 +418,30 @@
     color: white;
     border-color: #0284c7;
 }
+
+.delete-icon-float {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    color: #ef4444;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-weight: bold;
+    display: none; /* Se muestra al pasar el mouse */
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.doc-card:hover .delete-icon-float {
+    display: flex;
+}
+
+.delete-icon-float:hover {
+    background: #ef4444;
+    color: white;
+}

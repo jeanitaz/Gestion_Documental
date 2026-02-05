@@ -48,8 +48,8 @@ const AdminDashboard = () => {
 
     const fetchLogs = async () => {
         try {
-            const response = await fetch('http://localhost:3001/api/auditoria');
-            const areasRes = await fetch('http://localhost:3001/api/areas');
+            const response = await fetch('/api/auditoria');
+            const areasRes = await fetch('/api/areas');
             
             if (response.ok && areasRes.ok) {
                 const data = await response.json();
@@ -68,6 +68,24 @@ const AdminDashboard = () => {
         } catch (error) { console.error(error); }
     };
 
+    // --- NUEVA FUNCIÓN PARA BORRAR HISTORIAL ---
+    const handleClearLogs = async () => {
+        if (!confirm('⚠️ ¿Estás seguro de que quieres BORRAR TODO el historial? Esta acción no se puede deshacer.')) return;
+
+        try {
+            const res = await fetch('/api/auditoria', { method: 'DELETE' });
+            if (res.ok) {
+                alert('Historial eliminado correctamente');
+                fetchLogs(); // Recargar tabla
+            } else {
+                alert('Error al intentar eliminar');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error de conexión');
+        }
+    };
+
     // --- CREAR ÁREA ---
     const handleCreateArea = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -80,7 +98,7 @@ const AdminDashboard = () => {
             .replace(/\s+/g, '-');
 
         try {
-            const response = await fetch('http://localhost:3001/api/crear-area', {
+            const response = await fetch('/api/crear-area', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -250,7 +268,15 @@ const AdminDashboard = () => {
                             <div className="table-card">
                                 <div className="table-header">
                                     <h2>Logs Recientes</h2>
-                                    <button className="btn-refresh" onClick={fetchLogs}>🔄 Actualizar</button>
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        {/* BOTÓN ELIMINAR AGREGADO */}
+                                        <button className="btn-clear" onClick={handleClearLogs} style={{
+                                            background: '#fee2e2', color: '#ef4444', border: 'none', padding: '10px 15px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer'
+                                        }}>
+                                            🗑️ Limpiar
+                                        </button>
+                                        <button className="btn-refresh" onClick={fetchLogs}>🔄 Actualizar</button>
+                                    </div>
                                 </div>
                                 <div className="table-responsive">
                                     <table className="admin-table">
@@ -272,7 +298,6 @@ const AdminDashboard = () => {
                                                         </td>
                                                         <td className="user-cell">{log.user || 'Desconocido'}</td>
                                                         <td>
-                                                            {/* AQUÍ ESTABA EL ERROR: AGREGADO CHEQUEO DE NULOS */}
                                                             <span className={`action-tag ${(log.action || '').toLowerCase().includes('login') ? 'blue' : 'gray'}`}>
                                                                 {log.action || 'Acción'}
                                                             </span>

@@ -54,8 +54,9 @@ const AreaDashboard = () => {
     const [currentPath, setCurrentPath] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+    // Recuperar info del área (intenta buscar en hardcoded, si no usa el ID formateado)
     const foundArea = AREA_DATA.find(area => area.id === id);
-    const areaName = foundArea ? foundArea.label : id?.toUpperCase().replace('-', ' ') || 'Gestión Documental';
+    const areaName = foundArea ? foundArea.label : id?.toUpperCase().replace(/-/g, ' ') || 'Gestión Documental';
 
     const getFileIcon = (fileType: string) => {
         const typeUpper = fileType ? fileType.toUpperCase() : 'DEFAULT';
@@ -66,7 +67,7 @@ const AreaDashboard = () => {
         if (!id) return;
         setIsLoading(true);
         try {
-            const url = `http://localhost:3001/api/archivos/${id}?subpath=${encodeURIComponent(currentPath)}`;
+            const url = `/api/archivos/${id}?subpath=${encodeURIComponent(currentPath)}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error('Error al conectar');
             const data = await response.json();
@@ -104,7 +105,7 @@ const AreaDashboard = () => {
 
         setIsUploading(true);
         try {
-            const response = await fetch('http://localhost:3001/api/subir', {
+            const response = await fetch('/api/subir', {
                 method: 'POST',
                 body: formData
             });
@@ -123,7 +124,7 @@ const AreaDashboard = () => {
         }
     };
 
-    // --- FUNCIÓN CREAR CARPETA (SUB-CARPETA) ---
+    // --- FUNCIÓN CREAR CARPETA ---
     const handleCreateFolder = async () => {
         const folderName = prompt("Ingrese el nombre de la nueva carpeta:");
         if (!folderName || folderName.trim() === "") return;
@@ -136,7 +137,7 @@ const AreaDashboard = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:3001/api/crear-carpeta', {
+            const response = await fetch('/api/crear-carpeta', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -160,23 +161,62 @@ const AreaDashboard = () => {
         }
     };
 
+    // --- NUEVA FUNCIÓN: ELIMINAR ARCHIVO O CARPETA ---
+    const handleDelete = async (doc: DocumentFile, e: React.MouseEvent) => {
+        e.stopPropagation(); // Evitar que entre a la carpeta al hacer click en borrar
+        
+        const tipo = doc.type === 'FOLDER' ? 'la carpeta' : 'el archivo';
+        if (!confirm(`⚠️ ¿Estás seguro de ELIMINAR ${tipo} "${doc.name}"? Esta acción no se puede deshacer.`)) return;
+
+        const session = localStorage.getItem('userSession');
+        let usuarioNombre = 'Admin Área';
+        if (session) {
+            const parsed = JSON.parse(session);
+            usuarioNombre = parsed.user || 'Admin';
+        }
+
+        try {
+            const response = await fetch('/api/eliminar-archivo', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    areaId: id,
+                    rutaActual: currentPath,
+                    nombre: doc.name,
+                    usuario: usuarioNombre
+                })
+            });
+
+            const data = await response.json();
+            if (response.ok && data.success) {
+                // alert('🗑️ Elemento eliminado'); // Opcional: quitar si molesta
+                fetchDocumentsFromNetwork();
+            } else {
+                alert('❌ Error al eliminar: ' + (data.error || 'Desconocido'));
+            }
+        } catch (error) {
+            console.error(error);
+            alert('❌ Error de conexión');
+        }
+    };
+
     const handleFolderClick = (folderName: string) => {
-        const newPath = currentPath ? `${currentPath}\\${folderName}` : folderName;
+        const newPath = currentPath ? `${currentPath}/${folderName}` : folderName;
         setCurrentPath(newPath);
         setSearchTerm('');
     };
 
     const handleGoBack = () => {
         if (!currentPath) return;
-        const parts = currentPath.split('\\');
+        const parts = currentPath.split('/');
         parts.pop();
-        setCurrentPath(parts.join('\\'));
+        setCurrentPath(parts.join('/'));
     };
 
     const handleDownload = (doc: DocumentFile) => {
         if (doc.type === 'FOLDER') return;
         const rutaSegura = encodeURIComponent(doc.relativePath || doc.name);
-        window.open(`http://localhost:3001/api/descargar/${id}?path=${rutaSegura}`, '_blank');
+        window.open(`/api/descargar/${id}?path=${rutaSegura}`, '_blank');
     };
 
     const filteredDocuments = documents.filter((doc) =>
@@ -210,7 +250,7 @@ const AreaDashboard = () => {
                     <div className="breadcrumb">
                         <h1 className="dashboard-title">{areaName}</h1>
                         <span className="path-text">
-                            {currentPath ? `Raíz > ${currentPath.replace(/\\/g, ' > ')}` : 'Raíz del Área'}
+                            {currentPath ? `Raíz > ${currentPath.replace(/\//g, ' > ')}` : 'Raíz del Área'}
                         </span>
                     </div>
                 </header>
@@ -269,7 +309,7 @@ const AreaDashboard = () => {
                                             <th>Nombre</th>
                                             <th>Fecha</th>
                                             <th>Tamaño</th>
-                                            <th>Acción</th>
+                                            <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -288,9 +328,19 @@ const AreaDashboard = () => {
                                                 <td>{doc.date}</td>
                                                 <td>{doc.size}</td>
                                                 <td>
-                                                    {doc.type !== 'FOLDER' && (
-                                                        <button className="mini-dl" onClick={(e) => { e.stopPropagation(); handleDownload(doc) }}>⬇ Descargar</button>
-                                                    )}
+                                                    <div style={{display: 'flex', gap: '8px'}}>
+                                                        {doc.type !== 'FOLDER' && (
+                                                            <button className="mini-dl" onClick={(e) => { e.stopPropagation(); handleDownload(doc) }}>⬇</button>
+                                                        )}
+                                                        {/* BOTÓN ELIMINAR EN LISTA */}
+                                                        <button 
+                                                            className="mini-dl" 
+                                                            style={{backgroundColor: '#fee2e2', color: '#ef4444', border: '1px solid #fecaca'}}
+                                                            onClick={(e) => handleDelete(doc, e)}
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -305,6 +355,15 @@ const AreaDashboard = () => {
                                         className={`doc-card ${doc.type === 'FOLDER' ? 'is-folder' : ''}`}
                                         onClick={() => doc.type === 'FOLDER' ? handleFolderClick(doc.name) : handleDownload(doc)}
                                     >
+                                        {/* BOTÓN ELIMINAR FLOTANTE EN GRID */}
+                                        <button 
+                                            className="delete-icon-float"
+                                            onClick={(e) => handleDelete(doc, e)}
+                                            title="Eliminar"
+                                        >
+                                            ✕
+                                        </button>
+
                                         <div className="card-icon">
                                             {doc.type === 'FOLDER' ? (
                                                 <span className="folder-emoji">📁</span>
