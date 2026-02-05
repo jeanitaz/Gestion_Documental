@@ -1,105 +1,91 @@
-/* --- CONFIGURACIÓN BASE --- */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&family=Roboto:wght@300;400;700&display=swap');
+/* --- HomeInamhi.css - DISEÑO FINAL LIGHT NEON --- */
 
-:root {
-    /* PALETA "DARK TECH" */
-    --primary-blue: #020617;
-    --light-blue: #0ea5e9;
-    --cyan-water: #22d3ee;
-    
-    --glass-bg: rgba(15, 23, 42, 0.75); 
-    --glass-border: rgba(34, 211, 238, 0.2);
-    --text-white: #f8fafc;
-}
+/* --- CONFIGURACIÓN BASE --- */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700;800&family=Roboto:wght@300;400;700&display=swap');
 
 /* --- CONTENEDOR PRINCIPAL --- */
 .inamhi-home-container {
     position: relative;
     width: 100%;
-    height: 100vh; /* Ocupa toda la pantalla */
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
     overflow: hidden;
     font-family: 'Montserrat', sans-serif;
-    color: var(--text-white);
-    background-color: var(--primary-blue);
+    color: #1e293b;
+    background-color: #89ccf8; /* Color de respaldo si falla la imagen */
+
+    /* --- ¡AQUÍ PONES TU IMAGEN DE FONDO! --- */
+    /* Reemplaza la ruta entre comillas por la de tu imagen de figuras */
+    background-image: url('../assets/fondog.avif'); 
+    background-size: cover; /* Asegura que cubra toda la pantalla */
+    background-position: center;
+    background-repeat: no-repeat;
+    /* Un ligero tinte blanco encima para que la imagen no sea muy agresiva */
+    background-blend-mode: overlay;
 }
 
-/* Animación de fondo */
-.weather-bg-animation {
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(-45deg, #000000, #0f172a, #1e1b4b, #111827);
-    background-size: 300% 300%;
-    animation: gradientFlow 15s ease infinite;
-    z-index: -2;
+/* ANIMACIÓN DE FONDO Y PARTÍCULAS
+   Si usas la imagen de fondo geométrica, quizás quieras ocultar 
+   estas animaciones para que no se vea muy cargado. 
+   Si las quieres dejar, descomenta el código de abajo.
+   Por ahora, las oculto (display: none) para que se vea limpio como en la foto.
+*/
+.weather-bg-animation, .particles {
+    display: none; 
 }
 
-@keyframes gradientFlow {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-/* Partículas */
-.particles span {
-    position: absolute;
-    bottom: -100px;
-    background: radial-gradient(circle, rgba(34, 211, 238, 0.15) 0%, rgba(0,0,0,0) 70%);
-    border-radius: 50%;
-    animation: rise 15s infinite ease-in;
-    z-index: -1;
-    pointer-events: none;
-}
-
-.particles span:nth-child(1) { left: 10%; width: 50px; height: 50px; animation-duration: 12s; opacity: 0.3; }
-.particles span:nth-child(2) { left: 25%; width: 20px; height: 20px; animation-duration: 15s; animation-delay: 2s; opacity: 0.5; }
-.particles span:nth-child(3) { left: 40%; width: 70px; height: 70px; animation-duration: 18s; animation-delay: 1s; opacity: 0.2; }
-.particles span:nth-child(4) { left: 60%; width: 30px; height: 30px; animation-duration: 14s; opacity: 0.4; }
-.particles span:nth-child(5) { left: 80%; width: 40px; height: 40px; animation-duration: 16s; animation-delay: 3s; opacity: 0.3; }
-
-@keyframes rise {
-    0% { transform: translateY(0) scale(0.5); }
-    100% { transform: translateY(-120vh) scale(1.5); }
-}
-
-/* --- TARJETA DE CRISTAL (DISEÑO FIJO ORIGINAL) --- */
+/* --- TARJETA DE CRISTAL (CORREGIDA: MÁS OPACA) --- */
 .glass-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid var(--glass-border);
+    /* CAMBIO CLAVE: Aumenté la opacidad a 0.94 (casi 1).
+       Esto hace que la tarjeta sea casi blanca sólida, evitando
+       que el fondo geométrico se "sobreponga" y moleste la lectura.
+    */
+    background: rgba(255, 255, 255, 0.94);
+    
+    /* Mantenemos un ligero blur para el efecto "cristal esmerilado" en los bordes */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    
+    /* Borde Neón Celeste */
+    border: 2px solid rgba(14, 165, 233, 0.5);
     border-radius: 30px;
     
-    /* VOLVEMOS A LOS TAMAÑOS QUE SE VEÍAN BIEN */
+    /* Sombras Neón */
+    box-shadow: 
+        0 20px 40px rgba(0, 75, 120, 0.1), /* Sombra profundidad */
+        0 0 25px rgba(14, 165, 233, 0.3), /* Brillo exterior neón */
+        inset 0 0 10px rgba(14, 165, 233, 0.1); /* Brillo interior sutil */
+        
     padding: 3rem 2.5rem;
     width: 90%;
-    max-width: 550px; /* Ancho ideal para verse centrado y elegante */
+    max-width: 550px;
     
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
     gap: 1.5rem;
-    
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    
-    /* ESTO ASEGURA QUE NO CHOQUE CON EL BORDE EN PANTALLAS PEQUEÑAS */
+    transition: all 0.3s ease;
     margin: auto; 
+    /* Aseguramos que la tarjeta esté por encima del fondo */
+    z-index: 10;
 }
 
+/* Efecto Hover */
 .glass-card:hover {
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 0 0 20px rgba(34, 211, 238, 0.1);
-    border-color: rgba(34, 211, 238, 0.4);
+    border-color: rgba(14, 165, 233, 0.9);
+    box-shadow: 
+        0 25px 50px rgba(0, 75, 120, 0.15),
+        0 0 35px rgba(14, 165, 233, 0.6), /* Neón más intenso */
+        inset 0 0 15px rgba(14, 165, 233, 0.2);
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.98); /* Aún más blanco al pasar el mouse */
 }
 
-/* --- LOGO --- */
+/* --- LOGO AREA --- */
 .logo-area {
     width: 100%;
     display: flex;
@@ -107,10 +93,12 @@
 }
 
 .logo-glow {
+    /* Fondo casi blanco sólido para el logo */
     background: rgba(255, 255, 255, 0.9);
-    padding: 20px;
+    padding: 15px;
     border-radius: 25px;
-    box-shadow: 0 0 50px rgba(34, 211, 238, 0.4); 
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    box-shadow: 0 0 25px rgba(14, 165, 233, 0.25); 
     display: flex;
     align-items: center;
     justify-content: center;
@@ -118,7 +106,7 @@
 
 .main-logo {
     width: 100%;
-    max-width: 240px; /* Tamaño original */
+    max-width: 240px;
     height: auto;
 }
 
@@ -133,34 +121,35 @@
 .main-title {
     font-family: 'Roboto', sans-serif;
     font-size: 1.2rem;
-    font-weight: 400;
+    font-weight: 500;
     margin: 0;
     letter-spacing: 3px;
     text-transform: uppercase;
-    color: var(--cyan-water);
-    opacity: 0.9;
+    color: #0284c7;
     margin-top: 10px;
 }
 
 .sub-title {
     font-family: 'Montserrat', sans-serif;
-    font-size: 3.5rem; /* Título grande original */
+    font-size: 3.5rem;
     font-weight: 800;
     margin: 0.5rem 0 1rem 0;
-    background: linear-gradient(to right, #ffffff, var(--light-blue));
+    /* Gradiente azul vibrante */
+    background: linear-gradient(to right, #0284c7, #22d3ee);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     line-height: 1.1;
-    text-shadow: 0 0 30px rgba(14, 165, 233, 0.3);
+    filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.3));
 }
 
 .description {
     font-size: 1.1rem;
     line-height: 1.6;
     margin-bottom: 2rem;
-    color: #cbd5e1;
-    max-width: 480px; /* Ancho de texto para que no se estire demasiado */
+    color: #475569;
+    font-weight: 600; /* Un poco más negrita para leer mejor */
+    max-width: 480px;
 }
 
 /* --- BOTONES --- */
@@ -173,44 +162,26 @@
 }
 
 .btn-primary-glow {
-    background: linear-gradient(90deg, #0ea5e9, #22d3ee); 
-    color: #0f172a; 
+    background: linear-gradient(90deg, #0284c7, #22d3ee); 
+    color: #ffffff; 
     padding: 16px 45px;
     border-radius: 50px;
     text-decoration: none;
-    font-weight: 800;
+    font-weight: 700;
     font-size: 1.1rem;
     letter-spacing: 0.5px;
     transition: all 0.3s ease;
-    box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+    box-shadow: 0 10px 30px rgba(14, 165, 233, 0.5);
     display: flex;
     align-items: center;
     gap: 12px;
+    border: 1px solid rgba(255,255,255,0.3);
 }
 
 .btn-primary-glow:hover {
     transform: translateY(-3px) scale(1.03);
-    box-shadow: 0 0 40px rgba(34, 211, 238, 0.7);
-    background: linear-gradient(90deg, #22d3ee, #0ea5e9);
-}
-
-.btn-secondary-ghost {
-    color: var(--cyan-water);
-    text-decoration: none;
-    font-size: 0.95rem;
-    font-weight: 500;
-    transition: all 0.3s;
-    padding: 8px 20px;
-    border: 1px solid rgba(34, 211, 238, 0.3);
-    border-radius: 50px;
-    background: rgba(0,0,0,0.2);
-}
-
-.btn-secondary-ghost:hover {
-    background: rgba(34, 211, 238, 0.1);
-    color: white;
-    border-color: var(--cyan-water);
-    box-shadow: 0 0 15px rgba(34, 211, 238, 0.2);
+    box-shadow: 0 15px 40px rgba(34, 211, 238, 0.7);
+    background: linear-gradient(90deg, #22d3ee, #0284c7);
 }
 
 /* Footer */
@@ -218,10 +189,13 @@
     position: absolute;
     bottom: 15px;
     font-size: 0.85rem;
-    opacity: 0.5;
+    color: #64748b;
+    opacity: 0.9;
     letter-spacing: 1px;
     text-align: center;
     width: 100%;
+    font-weight: 600;
+    z-index: 10;
 }
 
 /* Animación de entrada */
@@ -235,34 +209,30 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- AQUÍ ESTÁ EL TRUCO DE LA RESPONSIVIDAD (SIN ROMPER NADA) --- */
-
-/* 1. Para Laptops normales y pequeñas (ej. 1366x768 o similar) */
+/* --- RESPONSIVE --- */
 @media screen and (max-height: 800px) {
     .glass-card {
-        /* Hacemos ZOOM OUT a la tarjeta para que quepa perfecta */
         transform: scale(0.85); 
-        /* Compensamos el margen para que siga centrada */
         margin: auto;
     }
 }
 
-/* 2. Para Pantallas muy bajitas o tablets apaisadas */
 @media screen and (max-height: 650px) {
     .glass-card {
-        transform: scale(0.75); /* Un poco más pequeña */
+        transform: scale(0.75); 
     }
     .simple-footer {
-        display: none; /* Ocultamos footer si estorba */
+        display: none; 
     }
 }
 
-/* 3. Para Celulares (Vertical) */
 @media screen and (max-width: 500px) {
     .glass-card {
-        transform: none; /* Quitamos el zoom fijo */
-        padding: 2rem 1.5rem; /* Ajustamos padding manual */
+        transform: none; 
+        padding: 2rem 1.5rem; 
         width: 95%;
+        background: rgba(255, 255, 255, 0.96); /* Casi totalmente sólido en celular */
+        box-shadow: 0 10px 25px rgba(0, 75, 120, 0.1), 0 0 20px rgba(14, 165, 233, 0.4);
     }
     .main-logo {
         max-width: 180px;
@@ -271,7 +241,7 @@
         font-size: 2.5rem;
     }
     .btn-primary-glow {
-        width: 100%; /* Botón ancho completo */
+        width: 100%; 
         justify-content: center;
     }
 }

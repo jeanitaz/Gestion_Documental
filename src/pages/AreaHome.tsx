@@ -2,11 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles/AreaHome.css'; 
 
-// Las credenciales fijas se mantienen como respaldo, pero ahora el login
-// intentará validar también contra las áreas que vienen del backend.
+// Las credenciales fijas se mantienen como respaldo
 const FIXED_CREDENTIALS = [
-    { id: 'tic',          user: 'admin_tic@inamhi.gob.ec', pass: 'tic123' },
-    // ... (puedes dejar las que tenías o borrarlas si guardas todo en el backend)
+    { id: 'tic',          user: 'tic@inamhi.gob.ec', pass: 'tic123' },
+    { id: 'hidro',        user: 'hidro@inamhi.gob.ec', pass: 'hidro123' },
+    { id: 'rrhh',         user: 'recursosh@inamhi.gob.ec', pass: 'recursos123' },
+    { id: 'admin-fin',    user: 'finanzas@inamhi.gob.ec', pass: 'fin123' },
+    { id: 'ejecutiva',    user: 'ejecutiva@inamhi.gob.ec', pass: 'dir123' },
+    { id: 'juridica',     user: 'juridica@inamhi.gob.ec', pass: 'jur123' },
+    { id: 'com-social',   user: 'comunicacion@inamhi.gob.ec', pass: 'com123' },
+    { id: 'planificacion', user: 'planificacion@inamhi.gob.ec', pass: 'plan123' },
+    { id: 'pronosticos',  user: 'pronosticos@inamhi.gob.ec', pass: 'pron123' },
+    { id: 'estudios',     user: 'estudioInv@inamhi.gob.ec', pass: 'est123' },
+    { id: 'red-obs',      user: 'redobs@inamhi.gob.ec', pass: 'red123' },
+    { id: 'calidad-agua', user: 'laboratorio@inamhi.gob.ec', pass: 'lab123' },
 ];
 
 interface Area {
@@ -17,7 +26,7 @@ interface Area {
     pass?: string; // Opcional, viene del backend
 }
 
-const AreaHome = () => {
+const AreaHome: React.FC = () => {
     const navigate = useNavigate();
     
     // Estados
@@ -114,6 +123,7 @@ const AreaHome = () => {
 
     return (
         <div className="area-home-container">
+            {/* Fondo animado (se ocultará por CSS si pones imagen de fondo) */}
             <div className="weather-bg-animation"></div>
             <div className="particles"><span></span><span></span><span></span><span></span><span></span></div>
 
@@ -136,7 +146,7 @@ const AreaHome = () => {
                             </div>
                         ))
                     ) : (
-                        <p style={{color: 'white'}}>Cargando áreas...</p>
+                        <p style={{color: '#64748b'}}>Cargando áreas...</p>
                     )}
                 </div>
                 
@@ -181,7 +191,7 @@ const AreaHome = () => {
                         <button className="btn-close-modal" onClick={closeModal}>✕</button>
                         <div className="modal-header">
                             <div className="modal-icon-wrapper" style={{ filter: 'drop-shadow(0 0 15px rgba(16, 185, 129, 0.4))' }}>🛡️</div>
-                            <h3 className="modal-area-name" style={{ backgroundImage: 'linear-gradient(to right, #fff, #10b981)' }}>Auditoría General</h3>
+                            <h3 className="modal-area-name" style={{ backgroundImage: 'linear-gradient(to right, #059669, #10b981)' }}>Auditoría General</h3>
                         </div>
                         <form className="login-form" onSubmit={handleAdminLogin}>
                             <div className="input-group">

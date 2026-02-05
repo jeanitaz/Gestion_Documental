@@ -25,19 +25,20 @@ const AdminDashboard = () => {
     const [auditLogs, setAuditLogs] = useState<LogEntry[]>([]);
     const [stats, setStats] = useState({ hoy: 0, areas: 0 });
     
-    // Estados para MODAL CREAR ÁREA (¡AQUÍ ESTABAN FALTANDO LOS DEL ÍCONO!)
+    // Estados para MODAL CREAR ÁREA
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newAreaName, setNewAreaName] = useState('');
     const [newAreaUser, setNewAreaUser] = useState('');
     const [newAreaPass, setNewAreaPass] = useState('');
-    const [newAreaIcon, setNewAreaIcon] = useState('📂'); // <--- AGREGADO
-    const [showEmojiPicker, setShowEmojiPicker] = useState(false); // <--- AGREGADO
+    const [newAreaIcon, setNewAreaIcon] = useState('📂'); 
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false); 
     const [isCreating, setIsCreating] = useState(false);
 
     // 2. FUNCIONES
     const formatTimeAgo = (isoDate: string) => {
+        if (!isoDate) return 'Fecha desconocida';
         const date = new Date(isoDate);
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
     const handleLogout = () => {
@@ -53,12 +54,16 @@ const AdminDashboard = () => {
             if (response.ok && areasRes.ok) {
                 const data = await response.json();
                 const areasData = await areasRes.json();
-                setAuditLogs(data);
                 
-                const todayStr = new Date().toISOString().split('T')[0];
-                const countHoy = data.filter((log: LogEntry) => log.time.startsWith(todayStr)).length;
-                
-                setStats({ hoy: countHoy, areas: areasData.length });
+                // Aseguramos que data sea un array antes de setearlo
+                if (Array.isArray(data)) {
+                    setAuditLogs(data);
+                    
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const countHoy = data.filter((log: LogEntry) => log.time && log.time.startsWith(todayStr)).length;
+                    
+                    setStats({ hoy: countHoy, areas: areasData.length });
+                }
             }
         } catch (error) { console.error(error); }
     };
@@ -122,96 +127,172 @@ const AdminDashboard = () => {
 
     return (
         <div className="admin-container">
+            {/* SIDEBAR FLOTANTE */}
             <div className="admin-sidebar">
-                <div className="admin-logo">🛡️ AUDITORÍA</div>
+                <div className="admin-logo-container">
+                    <div className="admin-logo-icon">🛡️</div>
+                    <div className="admin-logo-text">AUDITORÍA</div>
+                </div>
+                
                 <nav className="admin-nav">
                     <button className={!showCreateModal ? "active" : ""} onClick={() => setShowCreateModal(false)}>
-                        📊 Panel General
+                        <span className="nav-icon">📊</span> Panel General
                     </button>
                     <button 
                         className={showCreateModal ? "active" : ""} 
                         onClick={() => setShowCreateModal(true)}
-                        style={{ color: '#10b981', fontWeight: 'bold' }}
                     >
-                        ➕ Crear Nueva Área
+                        <span className="nav-icon">➕</span> Crear Nueva Área
                     </button>
                 </nav>
-                <button className="btn-admin-logout" onClick={handleLogout}>Cerrar Auditoría</button>
+
+                <div className="sidebar-footer">
+                    <button className="btn-admin-logout" onClick={handleLogout}>
+                        <span className="logout-icon">🚪</span> Cerrar Sesión
+                    </button>
+                </div>
             </div>
 
+            {/* CONTENIDO FLOTANTE */}
             <div className="admin-content">
                 <header className="admin-header">
-                    <h1>{showCreateModal ? 'Gestión de Áreas' : 'Registro de Actividad'}</h1>
-                    <div className="admin-badge">Super Admin</div>
+                    <div>
+                        <h1 className="page-title">{showCreateModal ? 'Gestión de Áreas' : 'Registro de Actividad'}</h1>
+                        <p className="page-subtitle">Bienvenido, Super Administrador</p>
+                    </div>
+                    <div className="admin-profile-badge">
+                        <div className="status-dot"></div>
+                        Super Admin
+                    </div>
                 </header>
 
-                {showCreateModal ? (
-                    <div className="logs-table-container" style={{ maxWidth: '600px', margin: '0 auto' }}>
-                        <h2 style={{ color: '#10b981', marginBottom: '20px' }}>Nueva Área</h2>
-                        <form className="login-form" onSubmit={handleCreateArea}>
-                            
-                            {/* Selector de Icono */}
-                            <div className="input-group">
-                                <label>Ícono</label>
-                                <div 
-                                    style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '5px', cursor: 'pointer', textAlign: 'center', fontSize: '1.5rem' }}
-                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                >
-                                    {newAreaIcon} <span style={{fontSize: '0.8rem'}}>▼</span>
-                                </div>
-                                {showEmojiPicker && (
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px', marginTop: '5px', border: '1px solid #ddd', padding: '10px', background: '#fff' }}>
-                                        {EMOJI_LIST.map(emoji => (
-                                            <div key={emoji} onClick={() => { setNewAreaIcon(emoji); setShowEmojiPicker(false); }} style={{cursor: 'pointer', fontSize: '1.5rem'}}>
-                                                {emoji}
+                <div className="content-scrollable">
+                    {showCreateModal ? (
+                        /* FORMULARIO DE CREACIÓN */
+                        <div className="create-area-wrapper">
+                            <div className="create-card">
+                                <h2 className="card-title">Nueva Área Departamental</h2>
+                                <p className="card-desc">Complete los datos para registrar un nuevo departamento en el sistema.</p>
+                                
+                                <form className="admin-form" onSubmit={handleCreateArea}>
+                                    
+                                    {/* Selector de Icono */}
+                                    <div className="form-group icon-picker-group">
+                                        <label>Ícono Representativo</label>
+                                        <div className="icon-selector-wrapper">
+                                            <div 
+                                                className="selected-icon-display"
+                                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                            >
+                                                {newAreaIcon}
                                             </div>
-                                        ))}
+                                            {showEmojiPicker && (
+                                                <div className="emoji-picker-dropdown">
+                                                    {EMOJI_LIST.map(emoji => (
+                                                        <div key={emoji} className="emoji-item" onClick={() => { setNewAreaIcon(emoji); setShowEmojiPicker(false); }}>
+                                                            {emoji}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                )}
+
+                                    <div className="form-group">
+                                        <label>Nombre del Área</label>
+                                        <input type="text" placeholder="Ej. Recursos Humanos" value={newAreaName} onChange={(e) => setNewAreaName(e.target.value)} required />
+                                    </div>
+                                    
+                                    <div className="form-row">
+                                        <div className="form-group">
+                                            <label>Usuario Admin</label>
+                                            <input type="email" placeholder="admin_rrhh@inamhi.gob.ec" value={newAreaUser} onChange={(e) => setNewAreaUser(e.target.value)} required />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Contraseña</label>
+                                            <input type="text" placeholder="Contraseña segura" value={newAreaPass} onChange={(e) => setNewAreaPass(e.target.value)} required />
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" className="btn-save-area" disabled={isCreating}>
+                                        {isCreating ? 'Procesando...' : '💾 Guardar Área'}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    ) : (
+                        /* DASHBOARD PRINCIPAL */
+                        <>
+                            <div className="stats-grid">
+                                <div className="stat-card">
+                                    <div className="stat-icon bg-green">📅</div>
+                                    <div className="stat-info">
+                                        <h3>Actividad de Hoy</h3>
+                                        <p>{stats.hoy} <span className="stat-label">registros</span></p>
+                                    </div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-icon bg-blue">🏢</div>
+                                    <div className="stat-info">
+                                        <h3>Áreas Activas</h3>
+                                        <p>{stats.areas} <span className="stat-label">departamentos</span></p>
+                                    </div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-icon bg-purple">📝</div>
+                                    <div className="stat-info">
+                                        <h3>Total Histórico</h3>
+                                        <p>{auditLogs.length} <span className="stat-label">eventos</span></p>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="input-group">
-                                <label>Nombre del Área</label>
-                                <input type="text" value={newAreaName} onChange={(e) => setNewAreaName(e.target.value)} required style={{width: '100%', padding: '10px'}} />
+                            <div className="table-card">
+                                <div className="table-header">
+                                    <h2>Logs Recientes</h2>
+                                    <button className="btn-refresh" onClick={fetchLogs}>🔄 Actualizar</button>
+                                </div>
+                                <div className="table-responsive">
+                                    <table className="admin-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Área</th>
+                                                <th>Usuario</th>
+                                                <th>Acción</th>
+                                                <th>Detalle</th>
+                                                <th>Tiempo</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {auditLogs.length > 0 ? (
+                                                auditLogs.map(log => (
+                                                    <tr key={log.id}>
+                                                        <td>
+                                                            <span className="area-badge">{log.area || 'General'}</span>
+                                                        </td>
+                                                        <td className="user-cell">{log.user || 'Desconocido'}</td>
+                                                        <td>
+                                                            {/* AQUÍ ESTABA EL ERROR: AGREGADO CHEQUEO DE NULOS */}
+                                                            <span className={`action-tag ${(log.action || '').toLowerCase().includes('login') ? 'blue' : 'gray'}`}>
+                                                                {log.action || 'Acción'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="detail-cell">{log.detail}</td>
+                                                        <td className="time-cell">{formatTimeAgo(log.time)}</td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={5} style={{textAlign: 'center', padding: '30px', color: '#94a3b8'}}>No hay registros disponibles.</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                            <div className="input-group">
-                                <label>Usuario</label>
-                                <input type="email" value={newAreaUser} onChange={(e) => setNewAreaUser(e.target.value)} required style={{width: '100%', padding: '10px'}} />
-                            </div>
-                            <div className="input-group">
-                                <label>Contraseña</label>
-                                <input type="text" value={newAreaPass} onChange={(e) => setNewAreaPass(e.target.value)} required style={{width: '100%', padding: '10px'}} />
-                            </div>
-                            <button type="submit" className="btn-login-glow" disabled={isCreating} style={{width: '100%', padding: '10px', background: '#10b981', color: 'white', border: 'none', borderRadius: '5px'}}>
-                                {isCreating ? 'Creando...' : 'Guardar Área'}
-                            </button>
-                        </form>
-                    </div>
-                ) : (
-                    <>
-                        <div className="stats-grid">
-                            <div className="stat-card"><h3>Hoy</h3><p>{stats.hoy}</p></div>
-                            <div className="stat-card"><h3>Áreas</h3><p>{stats.areas}</p></div>
-                        </div>
-                        <div className="logs-table-container">
-                            <h2>Logs Recientes</h2>
-                            <table className="admin-table">
-                                <thead><tr><th>Área</th><th>Usuario</th><th>Acción</th><th>Detalle</th><th>Tiempo</th></tr></thead>
-                                <tbody>
-                                    {auditLogs.map(log => (
-                                        <tr key={log.id}>
-                                            <td style={{fontWeight:'bold', color:'#10b981'}}>{log.area}</td>
-                                            <td>{log.user}</td>
-                                            <td>{log.action}</td>
-                                            <td>{log.detail}</td>
-                                            <td>{formatTimeAgo(log.time)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </>
-                )}
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );

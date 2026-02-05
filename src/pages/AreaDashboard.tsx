@@ -185,8 +185,7 @@ const AreaDashboard = () => {
 
     return (
         <div className="dashboard-container">
-            <div className="dashboard-bg"></div>
-
+            {/* Sidebar Flotante */}
             <aside className="sidebar-glass">
                 <div className="sidebar-header">
                     <div className="sidebar-logo">INAMHI</div>
@@ -200,15 +199,18 @@ const AreaDashboard = () => {
                         📝 Vista Lista
                     </button>
                 </nav>
-                <button onClick={() => navigate('/area')} className="btn-logout">🚪 Salir</button>
+                <div className="sidebar-footer">
+                    <button onClick={() => navigate('/area')} className="btn-logout">🚪 Salir</button>
+                </div>
             </aside>
 
+            {/* Contenido Flotante */}
             <main className="main-content">
                 <header className="top-bar">
                     <div className="breadcrumb">
                         <h1 className="dashboard-title">{areaName}</h1>
                         <span className="path-text">
-                            {currentPath ? `Raíz > ${currentPath.replace(/\\/g, ' > ')}` : 'Raíz'}
+                            {currentPath ? `Raíz > ${currentPath.replace(/\\/g, ' > ')}` : 'Raíz del Área'}
                         </span>
                     </div>
                 </header>
@@ -219,19 +221,19 @@ const AreaDashboard = () => {
                             {currentPath && (
                                 <button onClick={handleGoBack} className="btn-back">⬅ Volver</button>
                             )}
-                            <h3 style={{ color: 'white' }}>{filteredDocuments.length} elementos</h3>
+                            <h3 className="file-count-text">{filteredDocuments.length} elementos</h3>
                         </div>
 
                         <div className="toolbar-right">
                             <input
                                 type="text"
-                                placeholder="Buscar..."
+                                placeholder="Buscar archivo..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="search-input"
                             />
                             
-                            <button className="btn-create-folder" onClick={handleCreateFolder} style={{ marginRight: '10px', backgroundColor: '#f59e0b', border: 'none', padding: '10px 20px', borderRadius: '8px', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
+                            <button className="btn-create-folder" onClick={handleCreateFolder}>
                                 📁 Nueva Carpeta
                             </button>
 
@@ -245,7 +247,6 @@ const AreaDashboard = () => {
                                 className="btn-upload-new" 
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isUploading}
-                                style={{ opacity: isUploading ? 0.6 : 1, cursor: isUploading ? 'not-allowed' : 'pointer' }}
                             >
                                 {isUploading ? '⏳ Subiendo...' : '☁️ Subir Archivo'}
                             </button>
@@ -254,41 +255,48 @@ const AreaDashboard = () => {
 
                     <div className="explorer-container">
                         {isLoading ? (
-                            <div style={{ textAlign: 'center', padding: '40px', color: 'white' }}>🌀 Cargando archivos...</div>
+                            <div className="loading-state">🌀 Cargando archivos...</div>
                         ) : filteredDocuments.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>📁 Carpeta vacía</div>
+                            <div className="empty-state">
+                                <span>📁</span>
+                                <p>Esta carpeta está vacía</p>
+                            </div>
                         ) : viewMode === 'list' ? (
-                            <table className="docs-table">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Fecha</th>
-                                        <th>Tamaño</th>
-                                        <th>Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredDocuments.map(doc => (
-                                        <tr key={doc.id} onClick={() => doc.type === 'FOLDER' && handleFolderClick(doc.name)}>
-                                            <td>
-                                                {doc.type === 'FOLDER' ? (
-                                                    <span style={{ fontSize: '1.2rem', marginRight: '10px' }}>📁</span>
-                                                ) : (
-                                                    <img src={getFileIcon(doc.type)} className="list-icon" alt="icon" />
-                                                )}
-                                                {doc.name}
-                                            </td>
-                                            <td>{doc.date}</td>
-                                            <td>{doc.size}</td>
-                                            <td>
-                                                {doc.type !== 'FOLDER' && (
-                                                    <button className="mini-dl" onClick={(e) => { e.stopPropagation(); handleDownload(doc) }}>⬇</button>
-                                                )}
-                                            </td>
+                            <div className="table-responsive">
+                                <table className="docs-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Fecha</th>
+                                            <th>Tamaño</th>
+                                            <th>Acción</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {filteredDocuments.map(doc => (
+                                            <tr key={doc.id} onClick={() => doc.type === 'FOLDER' && handleFolderClick(doc.name)}>
+                                                <td>
+                                                    <div className="table-name-wrapper">
+                                                        {doc.type === 'FOLDER' ? (
+                                                            <span className="list-icon-folder">📁</span>
+                                                        ) : (
+                                                            <img src={getFileIcon(doc.type)} className="list-icon" alt="icon" />
+                                                        )}
+                                                        {doc.name}
+                                                    </div>
+                                                </td>
+                                                <td>{doc.date}</td>
+                                                <td>{doc.size}</td>
+                                                <td>
+                                                    {doc.type !== 'FOLDER' && (
+                                                        <button className="mini-dl" onClick={(e) => { e.stopPropagation(); handleDownload(doc) }}>⬇ Descargar</button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         ) : (
                             <div className="docs-grid">
                                 {filteredDocuments.map((doc) => (
@@ -299,7 +307,7 @@ const AreaDashboard = () => {
                                     >
                                         <div className="card-icon">
                                             {doc.type === 'FOLDER' ? (
-                                                <span className="folder-emoji">📂</span>
+                                                <span className="folder-emoji">📁</span>
                                             ) : (
                                                 <img src={getFileIcon(doc.type)} className="file-icon-img" alt={doc.type} />
                                             )}

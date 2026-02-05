@@ -1,8 +1,10 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
-import '../styles/HomeInamhi.css'; // Asegúrate de que esta ruta sea correcta
+import '../styles/HomeInamhi.css'; 
+// Asegúrate de tener declarado el módulo de imágenes en tu archivo vite-env.d.ts o similar si te marca error en el png
 import logoInamhi from '../assets/lgo.png';
 
-const HomePage = () => {
+const HomePage: React.FC = () => {
     return (
         <div className="inamhi-home-container">
             {/* Elementos de fondo para la animación */}
@@ -12,7 +14,7 @@ const HomePage = () => {
                 <span></span><span></span><span></span><span></span><span></span>
             </div>
 
-            {/* Contenido Principal (Efecto Cristal) */}
+            {/* Contenido Principal (Efecto Cristal Claro) */}
             <div className="glass-card animate-entry">
                 
                 <div className="logo-area">
@@ -37,8 +39,6 @@ const HomePage = () => {
                         <Link to="/area" className="btn-primary-glow">
                             <span className="btn-icon">📂</span> INGRESA A TU ÁREA
                         </Link>
-                        
-                        
                     </div>
                 </div>
             </div>
