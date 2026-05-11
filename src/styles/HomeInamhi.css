@@ -27,12 +27,7 @@
     background-blend-mode: overlay;
 }
 
-/* ANIMACIÓN DE FONDO Y PARTÍCULAS
-   Si usas la imagen de fondo geométrica, quizás quieras ocultar 
-   estas animaciones para que no se vea muy cargado. 
-   Si las quieres dejar, descomenta el código de abajo.
-   Por ahora, las oculto (display: none) para que se vea limpio como en la foto.
-*/
+
 .weather-bg-animation, .particles {
     display: none; 
 }

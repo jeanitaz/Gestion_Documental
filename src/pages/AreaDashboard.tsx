@@ -16,6 +16,7 @@ interface DocumentFile {
     relativePath?: string;
 }
 
+// Datos hardcodeados solo para mostrar el nombre bonito en el título
 const AREA_DATA: AreaInfo[] = [
     { id: 'tic', label: 'TECNOLOGÍAS DE LA INFORMACIÓN Y COMUNICACIÓN' },
     { id: 'rrhh', label: 'DIRECCIÓN DE ADMINISTRACIÓN DE RECURSOS HUMANOS' },
@@ -54,13 +55,28 @@ const AreaDashboard = () => {
     const [currentPath, setCurrentPath] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-    // Recuperar info del área (intenta buscar en hardcoded, si no usa el ID formateado)
     const foundArea = AREA_DATA.find(area => area.id === id);
     const areaName = foundArea ? foundArea.label : id?.toUpperCase().replace(/-/g, ' ') || 'Gestión Documental';
 
     const getFileIcon = (fileType: string) => {
         const typeUpper = fileType ? fileType.toUpperCase() : 'DEFAULT';
         return FILE_ICONS[typeUpper] || FILE_ICONS['DEFAULT'];
+    };
+
+    // --- FUNCIÓN CLAVE: OBTENER USUARIO LOGUEADO ---
+    // Esto asegura que el historial no diga "Desconocido"
+    const getCurrentUser = () => {
+        const session = localStorage.getItem('userSession');
+        if (session) {
+            try {
+                const parsed = JSON.parse(session);
+                // Retorna el usuario o el email que se guardó al hacer login
+                return parsed.user || parsed.email || 'Admin Área';
+            } catch (e) {
+                return 'Usuario Error';
+            }
+        }
+        return 'Usuario Desconocido';
     };
 
     const fetchDocumentsFromNetwork = async () => {
@@ -95,13 +111,8 @@ const AreaDashboard = () => {
         formData.append('areaId', id || '');
         formData.append('rutaActual', currentPath);
         
-        const session = localStorage.getItem('userSession');
-        let usuarioNombre = 'Usuario Web';
-        if (session) {
-            const parsed = JSON.parse(session);
-            usuarioNombre = parsed.user || parsed.email;
-        }
-        formData.append('usuario', usuarioNombre);
+        // Enviamos el usuario explícitamente para el log
+        formData.append('usuario', getCurrentUser());
 
         setIsUploading(true);
         try {
@@ -129,13 +140,6 @@ const AreaDashboard = () => {
         const folderName = prompt("Ingrese el nombre de la nueva carpeta:");
         if (!folderName || folderName.trim() === "") return;
 
-        const session = localStorage.getItem('userSession');
-        let usuarioNombre = 'Usuario Web';
-        if (session) {
-            const parsed = JSON.parse(session);
-            usuarioNombre = parsed.user || parsed.email;
-        }
-
         try {
             const response = await fetch('/api/crear-carpeta', {
                 method: 'POST',
@@ -144,7 +148,7 @@ const AreaDashboard = () => {
                     areaId: id,
                     rutaActual: currentPath,
                     nombreCarpeta: folderName,
-                    usuario: usuarioNombre
+                    usuario: getCurrentUser() // Enviamos usuario para el log
                 })
             });
 
@@ -161,19 +165,12 @@ const AreaDashboard = () => {
         }
     };
 
-    // --- NUEVA FUNCIÓN: ELIMINAR ARCHIVO O CARPETA ---
+    // --- FUNCIÓN ELIMINAR ---
     const handleDelete = async (doc: DocumentFile, e: React.MouseEvent) => {
-        e.stopPropagation(); // Evitar que entre a la carpeta al hacer click en borrar
+        e.stopPropagation();
         
         const tipo = doc.type === 'FOLDER' ? 'la carpeta' : 'el archivo';
-        if (!confirm(`⚠️ ¿Estás seguro de ELIMINAR ${tipo} "${doc.name}"? Esta acción no se puede deshacer.`)) return;
-
-        const session = localStorage.getItem('userSession');
-        let usuarioNombre = 'Admin Área';
-        if (session) {
-            const parsed = JSON.parse(session);
-            usuarioNombre = parsed.user || 'Admin';
-        }
+        if (!confirm(`⚠️ ¿Estás seguro de ELIMINAR ${tipo} "${doc.name}"?\nEsta acción no se puede deshacer.`)) return;
 
         try {
             const response = await fetch('/api/eliminar-archivo', {
@@ -183,14 +180,13 @@ const AreaDashboard = () => {
                     areaId: id,
                     rutaActual: currentPath,
                     nombre: doc.name,
-                    usuario: usuarioNombre
+                    usuario: getCurrentUser() // Enviamos usuario para el log
                 })
             });
 
             const data = await response.json();
             if (response.ok && data.success) {
-                // alert('🗑️ Elemento eliminado'); // Opcional: quitar si molesta
-                fetchDocumentsFromNetwork();
+                fetchDocumentsFromNetwork(); // Recargar lista
             } else {
                 alert('❌ Error al eliminar: ' + (data.error || 'Desconocido'));
             }

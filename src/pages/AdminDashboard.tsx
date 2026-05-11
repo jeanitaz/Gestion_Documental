@@ -2,14 +2,29 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/AdminDashboard.css';
 import { useEffect, useState } from 'react';
 
-// Interfaces
+// Interfaces (Modificada para aceptar claves en español e inglés)
 interface LogEntry {
     id: number;
     area: string;
-    action: string;
-    detail: string;
-    user: string;
-    time: string;
+    
+    // Soporte para inglés y español (Frontend vs Backend)
+    action?: string;
+    accion?: string;
+    
+    detail?: string;
+    detalle?: string;
+    
+    usuario?: string;
+    user?: string;
+    
+    fecha?: string;
+    time?: string;
+}
+
+interface AreaData {
+    id: string;
+    name: string;
+    icon: string;
 }
 
 // Lista de emojis para el selector
@@ -23,6 +38,7 @@ const AdminDashboard = () => {
     
     // 1. ESTADOS
     const [auditLogs, setAuditLogs] = useState<LogEntry[]>([]);
+    const [existingAreas, setExistingAreas] = useState<AreaData[]>([]); 
     const [stats, setStats] = useState({ hoy: 0, areas: 0 });
     
     // Estados para MODAL CREAR ÁREA
@@ -35,9 +51,10 @@ const AdminDashboard = () => {
     const [isCreating, setIsCreating] = useState(false);
 
     // 2. FUNCIONES
-    const formatTimeAgo = (isoDate: string) => {
+    const formatTimeAgo = (isoDate: string | undefined) => {
         if (!isoDate) return 'Fecha desconocida';
         const date = new Date(isoDate);
+        if (isNaN(date.getTime())) return 'Fecha inválida';
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
@@ -46,29 +63,34 @@ const AdminDashboard = () => {
         navigate('/area');
     };
 
-    const fetchLogs = async () => {
+    // Función unificada para cargar todo
+    const fetchAllData = async () => {
         try {
-            const response = await fetch('/api/auditoria');
+            const logsRes = await fetch('/api/auditoria');
             const areasRes = await fetch('/api/areas');
             
-            if (response.ok && areasRes.ok) {
-                const data = await response.json();
+            if (logsRes.ok && areasRes.ok) {
+                const logsData = await logsRes.json();
                 const areasData = await areasRes.json();
                 
-                // Aseguramos que data sea un array antes de setearlo
-                if (Array.isArray(data)) {
-                    setAuditLogs(data);
-                    
+                // Actualizar Logs
+                if (Array.isArray(logsData)) {
+                    setAuditLogs(logsData);
                     const todayStr = new Date().toISOString().split('T')[0];
-                    const countHoy = data.filter((log: LogEntry) => log.time && log.time.startsWith(todayStr)).length;
-                    
+                    // Cuenta los registros de hoy (soporta 'fecha' y 'time')
+                    const countHoy = logsData.filter((log: any) => (log.fecha || log.time || '').startsWith(todayStr)).length;
                     setStats({ hoy: countHoy, areas: areasData.length });
+                }
+
+                // Actualizar Lista de Áreas
+                if (Array.isArray(areasData)) {
+                    setExistingAreas(areasData);
                 }
             }
         } catch (error) { console.error(error); }
     };
 
-    // --- NUEVA FUNCIÓN PARA BORRAR HISTORIAL ---
+    // --- ELIMINAR HISTORIAL ---
     const handleClearLogs = async () => {
         if (!confirm('⚠️ ¿Estás seguro de que quieres BORRAR TODO el historial? Esta acción no se puede deshacer.')) return;
 
@@ -76,13 +98,39 @@ const AdminDashboard = () => {
             const res = await fetch('/api/auditoria', { method: 'DELETE' });
             if (res.ok) {
                 alert('Historial eliminado correctamente');
-                fetchLogs(); // Recargar tabla
+                fetchAllData(); 
             } else {
                 alert('Error al intentar eliminar');
             }
         } catch (error) {
             console.error(error);
             alert('Error de conexión');
+        }
+    };
+
+    // --- ELIMINAR ÁREA ---
+    const handleDeleteArea = async (areaId: string, areaName: string) => {
+        if (!confirm(`🛑 PELIGRO CRÍTICO 🛑\n\n¿Estás seguro de ELIMINAR el área "${areaName}"?\n\n1. Se borrará la carpeta de archivos del servidor.\n2. Se borrarán las credenciales de acceso.\n3. Esta acción es IRREVERSIBLE.`)) return;
+
+        const confirmacion = prompt(`Escribe "ELIMINAR" para confirmar el borrado de ${areaName}:`);
+        if (confirmacion !== "ELIMINAR") return;
+
+        try {
+            const response = await fetch('/api/eliminar-area', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ areaId })
+            });
+
+            const data = await response.json();
+            if (response.ok && data.success) {
+                alert('✅ Área eliminada correctamente.');
+                fetchAllData();
+            } else {
+                alert('❌ Error: ' + (data.error || 'No se pudo eliminar'));
+            }
+        } catch (e) {
+            alert('Error de conexión con el servidor');
         }
     };
 
@@ -116,7 +164,7 @@ const AdminDashboard = () => {
                 alert(`✅ Área "${newAreaName}" creada y disponible en login.`);
                 setShowCreateModal(false);
                 setNewAreaName(''); setNewAreaUser(''); setNewAreaPass(''); setNewAreaIcon('📂');
-                fetchLogs(); 
+                fetchAllData(); 
             } else {
                 alert('❌ Error: ' + (data.details || 'Error desconocido'));
             }
@@ -135,8 +183,8 @@ const AdminDashboard = () => {
                 alert('Acceso Denegado');
                 navigate('/area');
             } else {
-                fetchLogs();
-                const interval = setInterval(fetchLogs, 5000);
+                fetchAllData();
+                const interval = setInterval(fetchAllData, 5000);
                 return () => clearInterval(interval);
             }
         }
@@ -265,17 +313,56 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
+                            {/* --- SECCIÓN 1: GESTIÓN DE ÁREAS --- */}
+                            <div className="table-card" style={{ marginBottom: '30px' }}>
+                                <div className="table-header">
+                                    <h2>Gestión de Áreas</h2>
+                                </div>
+                                <div className="table-responsive" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                    <table className="admin-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Ícono</th>
+                                                <th>Nombre del Departamento</th>
+                                                <th>ID Sistema</th>
+                                                <th>Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {existingAreas.length > 0 ? existingAreas.map(area => (
+                                                <tr key={area.id}>
+                                                    <td style={{ fontSize: '1.5rem', textAlign: 'center' }}>{area.icon}</td>
+                                                    <td style={{ fontWeight: 'bold', color: '#334155' }}>{area.name}</td>
+                                                    <td style={{ color: '#94a3b8', fontFamily: 'monospace' }}>{area.id}</td>
+                                                    <td>
+                                                        <button 
+                                                            className="btn-clear" 
+                                                            style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                                                            onClick={() => handleDeleteArea(area.id, area.name)}
+                                                        >
+                                                            🗑️ Eliminar
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            )) : (
+                                                <tr><td colSpan={4} style={{ textAlign: 'center', padding: '20px' }}>No hay áreas registradas.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* --- SECCIÓN 2: LOGS DE AUDITORÍA --- */}
                             <div className="table-card">
                                 <div className="table-header">
                                     <h2>Logs Recientes</h2>
                                     <div style={{ display: 'flex', gap: '10px' }}>
-                                        {/* BOTÓN ELIMINAR AGREGADO */}
                                         <button className="btn-clear" onClick={handleClearLogs} style={{
                                             background: '#fee2e2', color: '#ef4444', border: 'none', padding: '10px 15px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer'
                                         }}>
-                                            🗑️ Limpiar
+                                            🗑️ Limpiar Historial
                                         </button>
-                                        <button className="btn-refresh" onClick={fetchLogs}>🔄 Actualizar</button>
+                                        <button className="btn-refresh" onClick={fetchAllData}>🔄 Actualizar</button>
                                     </div>
                                 </div>
                                 <div className="table-responsive">
@@ -291,19 +378,29 @@ const AdminDashboard = () => {
                                         </thead>
                                         <tbody>
                                             {auditLogs.length > 0 ? (
-                                                auditLogs.map(log => (
-                                                    <tr key={log.id}>
+                                                auditLogs.map((log, index) => (
+                                                    <tr key={index}>
                                                         <td>
                                                             <span className="area-badge">{log.area || 'General'}</span>
                                                         </td>
-                                                        <td className="user-cell">{log.user || 'Desconocido'}</td>
+                                                        <td className="user-cell" style={{ fontWeight: '600', color: '#475569' }}>
+                                                            {/* SOLUCIÓN: Lee ambos campos (usuario O user) */}
+                                                            {log.usuario || log.user || 'Desconocido'}
+                                                        </td>
                                                         <td>
-                                                            <span className={`action-tag ${(log.action || '').toLowerCase().includes('login') ? 'blue' : 'gray'}`}>
-                                                                {log.action || 'Acción'}
+                                                            <span className={`action-tag ${(log.action || log.accion || '').toLowerCase().includes('login') ? 'blue' : 'gray'}`}>
+                                                                {/* SOLUCIÓN: Lee ambos campos (action O accion) */}
+                                                                {log.action || log.accion || 'Acción'}
                                                             </span>
                                                         </td>
-                                                        <td className="detail-cell">{log.detail}</td>
-                                                        <td className="time-cell">{formatTimeAgo(log.time)}</td>
+                                                        <td className="detail-cell">
+                                                            {/* SOLUCIÓN: Lee ambos campos (detail O detalle) */}
+                                                            {log.detail || log.detalle || '-'}
+                                                        </td>
+                                                        <td className="time-cell">
+                                                            {/* SOLUCIÓN: Lee ambos campos (fecha O time) */}
+                                                            {formatTimeAgo(log.fecha || log.time)}
+                                                        </td>
                                                     </tr>
                                                 ))
                                             ) : (
